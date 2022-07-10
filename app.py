@@ -11,6 +11,7 @@ from models import FatorAcumulacaoCapital
 from models import DescontoSimples
 from models import DescontoComposto
 from models import SistemaPrestacaoConstante
+from models import SistemaAmortizacaoConstante
 import numpy
 
 app = Flask(__name__)
@@ -775,7 +776,7 @@ class ListaDescontoComposto(Resource):
             desconto_composto = DescontoComposto(
                 id=dados['id'],
                 desconto_composto=dados['montante'] - (
-                            dados['montante'] * (pow(1 - (dados['taxa'] / 100), dados['tempo']))),
+                        dados['montante'] * (pow(1 - (dados['taxa'] / 100), dados['tempo']))),
                 montante=dados['montante'],
                 taxa=dados['taxa'],
                 tempo=dados['tempo'],
@@ -796,7 +797,7 @@ class ListaDescontoComposto(Resource):
 
 class CalculoPrestacaoConstante(Resource):
     def get(self, prestacaoconstante):
-        prestacao_constante = DescontoComposto.query.filter_by(prestacaoconstante=prestacaoconstante).first()
+        prestacao_constante = SistemaPrestacaoConstante.query.filter_by(prestacaoconstante=prestacaoconstante).first()
         try:
             response = {
                 'saldo_devedor': prestacao_constante.saldo_devedor,
@@ -872,7 +873,7 @@ class ListaPrestacaoConstante(Resource):
                 amortizacao=dados['saldo_devedor'] / dados['tempo'],
                 taxa=dados['taxa'],
                 tempo=dados['tempo'],
-                prestacao=(dados['saldo_devedor'] / dados['tempo']) + (dados['taxa']/100 * dados['saldo_devedor'])
+                prestacao=(dados['saldo_devedor'] / dados['tempo']) + (dados['taxa'] / 100 * dados['saldo_devedor'])
             )
 
         prestacao_constante.save()
@@ -883,6 +884,101 @@ class ListaPrestacaoConstante(Resource):
             'taxa': prestacao_constante.taxa,
             'tempo': prestacao_constante.tempo,
             'prestacao': prestacao_constante.prestacao
+        }
+        return response
+
+
+class CalculoAmortizacaoConstante(Resource):
+    def get(self, amortizacaoconstante):
+        amortizacao_constante = SistemaAmortizacaoConstante.query.filter_by(
+            amortizacaoconstante=amortizacaoconstante).first()
+        try:
+            response = {
+                'saldo_devedor': amortizacao_constante.saldo_devedor,
+                'amortizacao': amortizacao_constante.amortizacao,
+                'taxa': amortizacao_constante.taxa,
+                'tempo': amortizacao_constante.tempo,
+                'prestacao': amortizacao_constante.valor_atual
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'fator acumulado não encontrada'
+            }
+        return response
+
+    def put(self, amortizacaoconstante):
+        amortizacao_constante = SistemaAmortizacaoConstante.query.filter_by(
+            amortizacaoconstante=amortizacaoconstante).first()
+        dados = request.json
+        if 'saldo_devedor' in dados:
+            amortizacao_constante.saldo_devedor = dados['saldo_devedor']
+
+        if 'amortizacao' in dados:
+            amortizacao_constante.amortizacao = dados['amortizacao']
+
+        if 'taxa' in dados:
+            amortizacao_constante.taxa = dados['taxa']
+
+        if 'tempo' in dados:
+            amortizacao_constante.tempo = dados['tempo']
+
+        if 'prestacao' in dados:
+            amortizacao_constante.prestacao = dados['prestacao']
+
+        amortizacao_constante.save()
+        response = {
+            'id': amortizacao_constante.id,
+            'saldo_devedor': amortizacao_constante.saldo_devedor,
+            'amortizacao': amortizacao_constante.amortizacao,
+            'taxa': amortizacao_constante.taxa,
+            'tempo': amortizacao_constante.tempo,
+            'prestacao': amortizacao_constante.prestacao
+        }
+
+        return response
+
+    def delete(self, amortizacaoconstante):
+        amortizacao_constante = SistemaAmortizacaoConstante.query.filter_by(id=amortizacaoconstante).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(amortizacao_constante)
+        amortizacao_constante.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaAmortizacaoConstante(Resource):
+
+    def get(self):
+        amortizacao_constante = SistemaAmortizacaoConstante.query.all()
+        response = [{
+            'id': i.id,
+            'saldo_devedor': i.saldo_devedor,
+            'amortizacao': i.amortizacao,
+            'taxa': i.taxa,
+            'tempo': i.tempo,
+            'prestacao': i.prestacao
+        } for i in amortizacao_constante]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['taxa'] and dados['tempo'] and dados['saldo_devedor'] > 0:
+            amortizacao_constante = SistemaAmortizacaoConstante(
+                id=dados['id'],
+                saldo_devedor=dados['saldo_devedor'],
+                amortizacao=dados['saldo_devedor'] / dados['tempo'],
+                taxa=dados['taxa'],
+                tempo=dados['tempo'],
+                prestacao=(dados['saldo_devedor'] * (dados['taxa'] / 100)) + (dados['saldo_devedor'] / dados['tempo'])
+            )
+
+        amortizacao_constante.save()
+        response = {
+            'id': amortizacao_constante.id,
+            'saldo_devedor': amortizacao_constante.saldo_devedor,
+            'amortizacao': amortizacao_constante.amortizacao,
+            'taxa': amortizacao_constante.taxa,
+            'tempo': amortizacao_constante.tempo,
+            'prestacao': amortizacao_constante.prestacao
         }
         return response
 
@@ -905,6 +1001,8 @@ api.add_resource(CalculoDescComposto, '/descontocomposto/<int:descontocomposto>/
 api.add_resource(ListaDescontoComposto, '/listadescontocomposto/')
 api.add_resource(CalculoPrestacaoConstante, '/prestacaoconstante/<int:prestacaoconstante>/')
 api.add_resource(ListaPrestacaoConstante, '/listaprestacaoconstante/')
+api.add_resource(CalculoAmortizacaoConstante, '/amortizacaoconstante/<int:amortizacaoconstante>/')
+api.add_resource(ListaAmortizacaoConstante, '/listaamortizacaoconstante/')
 
 if __name__ == '__main__':
     app.run(debug=True)

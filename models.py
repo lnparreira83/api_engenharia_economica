@@ -189,6 +189,27 @@ class SistemaPrestacaoConstante(Base):
         db_session.commit()
 
 
+class SistemaAmortizacaoConstante(Base):
+    __tablename__ = 'amortizacaoconstante'
+    id = Column(Integer, primary_key=True)
+    saldo_devedor = Column(Float())
+    amortizacao = Column(Float())
+    taxa = Column(Float())
+    tempo = Column(Float())
+    prestacao = Column(Float())
+
+    def __repr__(self):
+        return '<Amortizacao constante {}>'.format(self.saldo_devedor)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
