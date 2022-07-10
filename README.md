@@ -1,4 +1,4 @@
-# api_eng_econ
+# api_engenharia_economica
  Api desenvolvida em Python com Flask para processar os seguintes topicos de engenharia economica:
  
  * Juros Simples
