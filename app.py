@@ -7,6 +7,10 @@ from models import Operacoes
 from models import OperacaoTaxaNominal
 from models import OperacaoTaxaEfetiva
 from models import OperacaoTaxaJurosReal
+from models import FatorAcumulacaoCapital
+from models import DescontoSimples
+from models import DescontoComposto
+from models import SistemaPrestacaoConstante
 import numpy
 
 app = Flask(__name__)
@@ -501,6 +505,388 @@ class ListaTaxaReal(Resource):
         return response
 
 
+class FormacaoCapital(Resource):
+    def get(self, fatoracumulado):
+        fator_acumulado = FatorAcumulacaoCapital.query.filter_by(fatoracumulado=fatoracumulado).first()
+        try:
+            response = {
+                'fator_acumulado': fator_acumulado.fator_acumulado,
+                'taxa': fator_acumulado.taxa,
+                'tempo': fator_acumulado.tempo,
+                'montante_composto': fator_acumulado.montante_composto
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'fator acumulado não encontrada'
+            }
+        return response
+
+    def put(self, fatoracumulado):
+        fator_acumulado = FatorAcumulacaoCapital.query.filter_by(fatoracumulado=fatoracumulado).first()
+        dados = request.json
+        if 'fator_acumulado' in dados:
+            fator_acumulado.fator_acumulado = dados['fator_acumulado']
+
+        if 'taxa' in dados:
+            fator_acumulado.taxa = dados['taxa']
+
+        if 'tempo' in dados:
+            fator_acumulado.tempo = dados['tempo']
+
+        if 'montante_composto' in dados:
+            fator_acumulado.montante_composto = dados['montante_composto']
+
+        fator_acumulado.save()
+        response = {
+            'id': fator_acumulado.id,
+            'fator_acumulado': fator_acumulado.fator_acumulado,
+            'taxa': fator_acumulado.taxa,
+            'tempo': fator_acumulado.tempo,
+            'montante_composto': fator_acumulado.montante_composto
+        }
+
+        return response
+
+    def delete(self, fatoracumulado):
+        fator_acumulado = OperacaoJuroComposto.query.filter_by(id=fatoracumulado).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(fator_acumulado)
+        fator_acumulado.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaFormacaoCapital(Resource):
+
+    def get(self):
+        fator_acumulado = FatorAcumulacaoCapital.query.all()
+        response = [{
+            'id': i.id,
+            'fator_acumulado': i.fator_acumulado,
+            'taxa': i.taxa,
+            'tempo': i.tempo,
+            'montante_composto': i.montante_composto
+        } for i in fator_acumulado]
+        return response
+
+    # P=S(1+i)**−n
+    # S = montante composto
+    def post(self):
+        dados = request.json
+        if dados['taxa'] and dados['tempo'] > 0:
+            fator_acumulado = FatorAcumulacaoCapital(
+                id=dados['id'],
+                fator_acumulado=(1 + dados['montante_composto']) / (1 + dados['inflacao_periodo']) - 1,
+                taxa=dados['taxa_nominal'],
+                tempo=dados['inflacao_periodo'],
+                montante_composto=dados['montante_composto']
+            )
+
+        fator_acumulado.save()
+        response = {
+            'id': fator_acumulado.id,
+            'fator_acumulado': fator_acumulado.fator_acumulado,
+            'taxa': fator_acumulado.taxa,
+            'tempo': fator_acumulado.tempo,
+            'montante_composto': fator_acumulado.montante_composto
+        }
+        return response
+
+
+class CalculoDescSimples(Resource):
+    def get(self, descontosimples):
+        desconto_simples = DescontoSimples.query.filter_by(descontosimples=descontosimples).first()
+        try:
+            response = {
+                'desconto_simples': desconto_simples.desconto_simples,
+                'montante': desconto_simples.montante,
+                'taxa': desconto_simples.taxa,
+                'tempo': desconto_simples.tempo,
+                'valor_atual': desconto_simples.valor_atual
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'fator acumulado não encontrada'
+            }
+        return response
+
+    def put(self, descontosimples):
+        desconto_simples = DescontoSimples.query.filter_by(descontosimples=descontosimples).first()
+        dados = request.json
+        if 'desconto_simples' in dados:
+            desconto_simples.desconto_simples = dados['desconto_simples']
+
+        if 'montante' in dados:
+            desconto_simples.montante = dados['montante']
+
+        if 'taxa' in dados:
+            desconto_simples.taxa = dados['taxa']
+
+        if 'tempo' in dados:
+            desconto_simples.tempo = dados['tempo']
+
+        if 'valor_atual' in dados:
+            desconto_simples.valor_atual = dados['valor_atual']
+
+        desconto_simples.save()
+        response = {
+            'id': desconto_simples.id,
+            'desconto_simples': desconto_simples.desconto_simples,
+            'montante': desconto_simples.montante,
+            'taxa': desconto_simples.taxa,
+            'tempo': desconto_simples.tempo,
+            'valor_atual': desconto_simples.valor_atual
+        }
+
+        return response
+
+    def delete(self, descontosimples):
+        desconto_simples = DescontoSimples.query.filter_by(id=descontosimples).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(desconto_simples)
+        desconto_simples.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaDescontoSimples(Resource):
+
+    def get(self):
+        desconto_simples = DescontoSimples.query.all()
+        response = [{
+            'id': i.id,
+            'desconto_simples': i.desconto_simples,
+            'montante': i.montante,
+            'taxa': i.taxa,
+            'tempo': i.tempo,
+            'valor_atual': i.valor_atual
+        } for i in desconto_simples]
+        return response
+
+    # Dr = A . i . t          A = N / (1 + i.t)
+    #
+    # Onde:
+    #
+    # Dr = desconto racional
+    #
+    # N = valor nominal
+    #
+    # i = taxa
+    #
+    # t = tempo
+    #
+    # A = valor atual
+    def post(self):
+        dados = request.json
+        if dados['taxa'] and dados['tempo'] and dados['montante'] > 0:
+            desconto_simples = DescontoSimples(
+                id=dados['id'],
+                desconto_simples=(dados['montante'] * (dados['taxa'] / 100) * dados['tempo']),
+                montante=dados['montante'],
+                taxa=dados['taxa'],
+                tempo=dados['tempo'],
+                valor_atual=dados['montante'] / (1 + (dados['taxa'] / 100) * dados['tempo'])
+            )
+
+        desconto_simples.save()
+        response = {
+            'id': desconto_simples.id,
+            'desconto_simples': desconto_simples.desconto_simples,
+            'montante': desconto_simples.montante,
+            'taxa': desconto_simples.taxa,
+            'tempo': desconto_simples.tempo,
+            'valor_atual': desconto_simples.valor_atual
+        }
+        return response
+
+
+class CalculoDescComposto(Resource):
+    def get(self, descontocomposto):
+        desconto_composto = DescontoComposto.query.filter_by(descontocomposto=descontocomposto).first()
+        try:
+            response = {
+                'desconto_composto': desconto_composto.desconto_composto,
+                'montante': desconto_composto.montante,
+                'taxa': desconto_composto.taxa,
+                'tempo': desconto_composto.tempo,
+                'valor_atual': desconto_composto.valor_atual
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'fator acumulado não encontrada'
+            }
+        return response
+
+    def put(self, descontocomposto):
+        desconto_composto = DescontoComposto.query.filter_by(descontocomposto=descontocomposto).first()
+        dados = request.json
+        if 'desconto_composto' in dados:
+            desconto_composto.desconto_composto = dados['desconto_composto']
+
+        if 'montante' in dados:
+            desconto_composto.montante = dados['montante']
+
+        if 'taxa' in dados:
+            desconto_composto.taxa = dados['taxa']
+
+        if 'tempo' in dados:
+            desconto_composto.tempo = dados['tempo']
+
+        if 'valor_atual' in dados:
+            desconto_composto.valor_atual = dados['valor_atual']
+
+        desconto_composto.save()
+        response = {
+            'id': desconto_composto.id,
+            'desconto_composto': desconto_composto.desconto_simples,
+            'montante': desconto_composto.montante,
+            'taxa': desconto_composto.taxa,
+            'tempo': desconto_composto.tempo,
+            'valor_atual': desconto_composto.valor_atual
+        }
+
+        return response
+
+    def delete(self, descontocomposto):
+        desconto_composto = DescontoComposto.query.filter_by(id=descontocomposto).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(desconto_composto)
+        desconto_composto.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaDescontoComposto(Resource):
+
+    def get(self):
+        desconto_composto = DescontoComposto.query.all()
+        response = [{
+            'id': i.id,
+            'desconto_composto': i.desconto_composto,
+            'montante': i.montante,
+            'taxa': i.taxa,
+            'tempo': i.tempo,
+            'valor_atual': i.valor_atual
+        } for i in desconto_composto]
+        return response
+
+    # DC = N . i . t        A = N . (1 – i)**t
+
+    def post(self):
+        dados = request.json
+        if dados['taxa'] and dados['tempo'] and dados['montante'] > 0:
+            desconto_composto = DescontoComposto(
+                id=dados['id'],
+                desconto_composto=dados['montante'] - (
+                            dados['montante'] * (pow(1 - (dados['taxa'] / 100), dados['tempo']))),
+                montante=dados['montante'],
+                taxa=dados['taxa'],
+                tempo=dados['tempo'],
+                valor_atual=dados['montante'] * pow(1 - (dados['taxa'] / 100), dados['tempo'])
+            )
+
+        desconto_composto.save()
+        response = {
+            'id': desconto_composto.id,
+            'desconto_composto': desconto_composto.desconto_composto,
+            'montante': desconto_composto.montante,
+            'taxa': desconto_composto.taxa,
+            'tempo': desconto_composto.tempo,
+            'valor_atual': desconto_composto.valor_atual
+        }
+        return response
+
+
+class CalculoPrestacaoConstante(Resource):
+    def get(self, prestacaoconstante):
+        prestacao_constante = DescontoComposto.query.filter_by(prestacaoconstante=prestacaoconstante).first()
+        try:
+            response = {
+                'saldo_devedor': prestacao_constante.saldo_devedor,
+                'amortizacao': prestacao_constante.amortizacao,
+                'taxa': prestacao_constante.taxa,
+                'tempo': prestacao_constante.tempo,
+                'prestacao': prestacao_constante.valor_atual
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'fator acumulado não encontrada'
+            }
+        return response
+
+    def put(self, prestacaoconstante):
+        prestacao_constante = SistemaPrestacaoConstante.query.filter_by(prestacaoconstante=prestacaoconstante).first()
+        dados = request.json
+        if 'saldo_devedor' in dados:
+            prestacao_constante.saldo_devedor = dados['saldo_devedor']
+
+        if 'amortizacao' in dados:
+            prestacao_constante.amortizacao = dados['amortizacao']
+
+        if 'taxa' in dados:
+            prestacao_constante.taxa = dados['taxa']
+
+        if 'tempo' in dados:
+            prestacao_constante.tempo = dados['tempo']
+
+        if 'prestacao' in dados:
+            prestacao_constante.prestacao = dados['prestacao']
+
+        prestacao_constante.save()
+        response = {
+            'id': prestacao_constante.id,
+            'saldo_devedor': prestacao_constante.saldo_devedor,
+            'amortizacao': prestacao_constante.amortizacao,
+            'taxa': prestacao_constante.taxa,
+            'tempo': prestacao_constante.tempo,
+            'prestacao': prestacao_constante.prestacao
+        }
+
+        return response
+
+    def delete(self, prestacaoconstante):
+        prestacao_constante = SistemaPrestacaoConstante.query.filter_by(id=prestacaoconstante).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(prestacao_constante)
+        prestacao_constante.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaPrestacaoConstante(Resource):
+
+    def get(self):
+        prestacao_constante = SistemaPrestacaoConstante.query.all()
+        response = [{
+            'id': i.id,
+            'saldo_devedor': i.saldo_devedor,
+            'amortizacao': i.amortizacao,
+            'taxa': i.taxa,
+            'tempo': i.tempo,
+            'prestacao': i.prestacao
+        } for i in prestacao_constante]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['taxa'] and dados['tempo'] and dados['saldo_devedor'] > 0:
+            prestacao_constante = SistemaPrestacaoConstante(
+                id=dados['id'],
+                saldo_devedor=dados['saldo_devedor'],
+                amortizacao=dados['saldo_devedor'] / dados['tempo'],
+                taxa=dados['taxa'],
+                tempo=dados['tempo'],
+                prestacao=(dados['saldo_devedor'] / dados['tempo']) + (dados['taxa']/100 * dados['saldo_devedor'])
+            )
+
+        prestacao_constante.save()
+        response = {
+            'id': prestacao_constante.id,
+            'saldo_devedor': prestacao_constante.saldo_devedor,
+            'amortizacao': prestacao_constante.amortizacao,
+            'taxa': prestacao_constante.taxa,
+            'tempo': prestacao_constante.tempo,
+            'prestacao': prestacao_constante.prestacao
+        }
+        return response
+
+
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
 api.add_resource(Operacao, '/jurosimples/<int:id>/')
@@ -511,6 +897,14 @@ api.add_resource(TaxaEfetiva, '/taxaefetiva/<int:id>/')
 api.add_resource(ListaTaxaEfetiva, '/listataxaefetiva/')
 api.add_resource(TaxaJurosReal, '/taxareal/<int:id>/')
 api.add_resource(ListaTaxaReal, '/listataxareal/')
+api.add_resource(FormacaoCapital, '/formacaocapitalac/<int:id>/')
+api.add_resource(ListaFormacaoCapital, '/listaformacaocapitalac/')
+api.add_resource(CalculoDescSimples, '/descontosimples/<int:id>/')
+api.add_resource(ListaDescontoSimples, '/listadescontosimples/')
+api.add_resource(CalculoDescComposto, '/descontocomposto/<int:descontocomposto>/')
+api.add_resource(ListaDescontoComposto, '/listadescontocomposto/')
+api.add_resource(CalculoPrestacaoConstante, '/prestacaoconstante/<int:prestacaoconstante>/')
+api.add_resource(ListaPrestacaoConstante, '/listaprestacaoconstante/')
 
 if __name__ == '__main__':
     app.run(debug=True)

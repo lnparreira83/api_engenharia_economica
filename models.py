@@ -106,6 +106,89 @@ class OperacaoTaxaJurosReal(Base):
         db_session.commit()
 
 
+class FatorAcumulacaoCapital(Base):
+    __tablename__ = 'acumulacaocapital'
+    id = Column(Integer, primary_key=True)
+    fator_acumulado = Column(Float())
+    taxa = Column(Float())
+    tempo = Column(Float())
+    montante_composto = Column(Float())
+
+    def __repr__(self):
+        return '<Fator Capital {}>'.format(self.fator_acumulado)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class DescontoSimples(Base):
+    __tablename__ = 'descontosimples'
+    id = Column(Integer, primary_key=True)
+    desconto_simples = Column(Float())
+    montante = Column(Float())
+    taxa = Column(Float())
+    tempo = Column(Float())
+    valor_atual = Column(Float())
+
+    def __repr__(self):
+        return '<Fator Capital {}>'.format(self.desconto_simples)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class DescontoComposto(Base):
+    __tablename__ = 'descontocomposto'
+    id = Column(Integer, primary_key=True)
+    desconto_composto = Column(Float())
+    montante = Column(Float())
+    taxa = Column(Float())
+    tempo = Column(Float())
+    valor_atual = Column(Float())
+
+    def __repr__(self):
+        return '<Desconto composto {}>'.format(self.desconto_composto)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class SistemaPrestacaoConstante(Base):
+    __tablename__ = 'prestacaoconstante_spc'
+    id = Column(Integer, primary_key=True)
+    saldo_devedor = Column(Float())
+    amortizacao = Column(Float())
+    taxa = Column(Float())
+    tempo = Column(Float())
+    prestacao = Column(Float())
+
+    def __repr__(self):
+        return '<Desconto composto {}>'.format(self.saldo_devedor)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
