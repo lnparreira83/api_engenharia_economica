@@ -17,6 +17,7 @@ from models import AnaliseVertical
 from models import LiquidezImediata
 from models import LiquidezCorrente
 from models import LiquidezSeca
+from models import LiquidezGeral
 import numpy
 
 app = Flask(__name__)
@@ -1415,7 +1416,7 @@ class ListaLiquidezCorrente(Resource):
                 ativo_circulante=dados['ativo_circulante'],
                 liquidez_corrente=dados['ativo_circulante'] / dados['passivo_circulante'],
                 passivo_circulante=dados['passivo_circulante'],
-                resultado="Bom grau de liquidez corrente" if (dados['ativo_circulante']  / dados[
+                resultado="Bom grau de liquidez corrente" if (dados['ativo_circulante'] / dados[
                     'passivo_circulante']) >= 1 else "Não tem como quitar dividas"
             )
 
@@ -1527,6 +1528,115 @@ class ListaLiquidezSeca(Resource):
         }
         return response
 
+
+class CalculoLiquidezGeral(Resource):
+    def get(self, liquidezgeral):
+        liquidez_geral = LiquidezGeral.query.filter_by(
+            id=liquidezgeral).first()
+        try:
+            response = {
+                'ativo_circulante': liquidez_geral.ativo_circulante,
+                'realizavel_longo_prazo': liquidez_geral.realizavel_longo_prazo,
+                'liquidez_geral': liquidez_geral.liquidez_geral,
+                'passivo_circulante': liquidez_geral.passivo_circulante,
+                'exigivel_longo_prazo': liquidez_geral.exigivel_longo_prazo,
+                'resultado': liquidez_geral.resultado
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'liquidez geral não encontrada'
+            }
+        return response
+
+    def put(self, liquidezgeral):
+        liquidez_geral = LiquidezGeral.query.filter_by(
+            liquidezgeral=liquidezgeral).first()
+        dados = request.json
+
+        if 'ativo_circulante' in dados:
+            liquidez_geral.ativo_circulante = dados['ativo_circulante']
+
+        if 'realizavel_longo_prazo' in dados:
+            liquidez_geral.realizavel_longo_prazo = dados['realizavel_longo_prazo']
+
+        if 'liquidez_geral' in dados:
+            liquidez_geral.liquidez_geral = dados['liquidez_geral']
+
+        if 'passivo_circulante' in dados:
+            liquidez_geral.passivo_circulante = dados['passivo_circulante']
+
+        if 'exigivel_longo_prazo' in dados:
+            liquidez_geral.exigivel_longo_prazo = dados['exigivel_longo_prazo']
+
+        if 'resultado' in dados:
+            liquidez_geral.resultado = dados['resultado']
+
+        liquidez_geral.save()
+        response = {
+            'id': liquidez_geral.id,
+            'ativo_circulante': liquidez_geral.ativo_circulante,
+            'realizavel_longo_prazo': liquidez_geral.realizavel_longo_prazo,
+            'liquidez_geral': liquidez_geral.liquidez_geral,
+            'passivo_circulante': liquidez_geral.passivo_circulante,
+            'exigivel_longo_prazo': liquidez_geral.exigivel_longo_prazo,
+            'resultado': liquidez_geral.resultado
+        }
+
+        return response
+
+    def delete(self, liquidezgeral):
+        liquidez_geral = LiquidezSeca.query.filter_by(id=liquidezgeral).first()
+        mensagem = 'Liquidez geral {} excluida com sucesso'.format(liquidez_geral)
+        liquidez_geral.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaLiquidezGeral(Resource):
+
+    def get(self):
+        liquidez_geral = LiquidezGeral.query.all()
+        response = [{
+            'id': i.id,
+            'ativo_circulante': i.ativo_circulante,
+            'realizavel_longo_prazo': i.realizavel_longo_prazo,
+            'liquidez_geral': i.liquidez_geral,
+            'passivo_circulante': i.passivo_circulante,
+            'exigivel_longo_prazo': i.exigivel_longo_prazo,
+            'resultado': i.resultado
+
+        } for i in liquidez_geral]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['passivo_circulante'] > 0 < dados['ativo_circulante']:
+            liquidez_geral = LiquidezGeral(
+                id=dados['id'],
+                ativo_circulante=dados['ativo_circulante'],
+                realizavel_longo_prazo=dados['realizavel_longo_prazo'],
+                liquidez_geral=(dados['ativo_circulante'] + dados['realizavel_longo_prazo']) / (
+                            dados['passivo_circulante'] + dados['exigivel_longo_prazo']),
+                passivo_circulante=dados['passivo_circulante'],
+                exigivel_longo_prazo=dados['exigivel_longo_prazo'],
+                resultado="Bom grau de liquidez geral" if (dados['ativo_circulante'] + dados[
+                    'realizavel_longo_prazo']) / (dados['passivo_circulante'] + dados[
+                    'exigivel_longo_prazo']) >= 1 else "Não tem como quitar dividas"
+            )
+
+        liquidez_geral.save()
+        response = {
+            'id': liquidez_geral.id,
+            'ativo_circulante': liquidez_geral.ativo_circulante,
+            'realizavel_longo_prazo': liquidez_geral.realizavel_longo_prazo,
+            'liquidez_geral': liquidez_geral.liquidez_geral,
+            'passivo_circulante': liquidez_geral.passivo_circulante,
+            'exigivel_longo_prazo': liquidez_geral.exigivel_longo_prazo,
+            'resultado': liquidez_geral.resultado
+        }
+        return response
+
+
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
 api.add_resource(Operacao, '/jurosimples/<int:id>/')
@@ -1557,6 +1667,9 @@ api.add_resource(CalculoLiquidezCorrente, '/liquidezcorrente/<int:liquidezcorren
 api.add_resource(ListaLiquidezCorrente, '/listaliquidezcorrente/')
 api.add_resource(CalculoLiquidezSeca, '/liquidezseca/<int:liquidezseca>/')
 api.add_resource(ListaLiquidezSeca, '/listaliquidezseca/')
+api.add_resource(CalculoLiquidezGeral, '/liquidezgeral/<int:liquidezgeral>/')
+api.add_resource(ListaLiquidezGeral, '/listaliquidezgeral/')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

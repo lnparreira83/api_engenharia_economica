@@ -319,6 +319,27 @@ class LiquidezSeca(Base):
         db_session.delete(self)
         db_session.commit()
 
+class LiquidezGeral(Base):
+    __tablename__ = 'liquidezgeral'
+    id = Column(Integer, primary_key=True)
+    ativo_circulante = Column(Float())
+    realizavel_longo_prazo = Column(Float())
+    liquidez_geral = Column(Float())
+    passivo_circulante = Column(Float())
+    exigivel_longo_prazo = Column(Float())
+    resultado = Column(String())
+
+    def __repr__(self):
+        return '<Liquidez geral {}>'.format(self.resultado)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
 
 def init_db():
     Base.metadata.create_all(bind=engine)

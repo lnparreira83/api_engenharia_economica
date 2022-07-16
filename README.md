@@ -16,3 +16,4 @@
  * Liquidez Imediata
  * Liquidez Corrente
  * Liquidez Seca
+ * Liquidez Geral
