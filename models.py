@@ -210,6 +210,30 @@ class SistemaAmortizacaoConstante(Base):
         db_session.commit()
 
 
+class AnaliseHorizontal(Base):
+    __tablename__ = 'analisehorizontal'
+    id = Column(Integer, primary_key=True)
+    receita_base = Column(Float())
+    custo_base = Column(Float())
+    periodo_base = Column(Integer())
+    receita_atual = Column(Float())
+    custo_atual = Column(Float())
+    periodo_atual = Column(Integer())
+    resultado_bruto = Column(Float())
+    variacao = Column(Float())
+
+    def __repr__(self):
+        return '<Analise horizontal {}>'.format(self.saldo_devedor)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 

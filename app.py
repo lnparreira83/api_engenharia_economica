@@ -12,6 +12,7 @@ from models import DescontoSimples
 from models import DescontoComposto
 from models import SistemaPrestacaoConstante
 from models import SistemaAmortizacaoConstante
+from models import AnaliseHorizontal
 import numpy
 
 app = Flask(__name__)
@@ -982,6 +983,118 @@ class ListaAmortizacaoConstante(Resource):
         }
         return response
 
+
+class CalculoAnaliseHorizontal(Resource):
+    def get(self, analisehorizontal):
+        analise_horizontal = SistemaAmortizacaoConstante.query.filter_by(
+            analisehorizontal=analisehorizontal).first()
+        try:
+            response = {
+                'receita_base': analise_horizontal.receita_base,
+                'custo_base': analise_horizontal.custo_base,
+                'periodo_base': analise_horizontal.periodo_base,
+                'receita_atual': analise_horizontal.receita_atual,
+                'custo_atual': analise_horizontal.custo_atual,
+                'periodo_atual': analise_horizontal.periodo_atual,
+                'resultado_bruto': analise_horizontal.resultado_bruto,
+                'variacao': analise_horizontal.variacao
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'analise horizontal não encontrada'
+            }
+        return response
+
+    def put(self, analisehorizontal):
+        analise_horizontal = AnaliseHorizontal.query.filter_by(
+            analisehorizontal=analisehorizontal).first()
+        dados = request.json
+        if 'receita_base' in dados:
+            analise_horizontal.receita_base = dados['receita_base']
+
+        if 'custo_base' in dados:
+            analise_horizontal.custo_base = dados['custo_base']
+
+        if 'periodo_base' in dados:
+            analise_horizontal.periodo_base = dados['periodo_base']
+
+        if 'receita_atual' in dados:
+            analise_horizontal.receita_atual = dados['receita_atual']
+
+        if 'custo_atual' in dados:
+            analise_horizontal.custo_atual = dados['custo_atual']
+
+        if 'periodo_atual' in dados:
+            analise_horizontal.periodo_atual = dados['periodo_atual']
+
+        if 'resultado_bruto' in dados:
+            analise_horizontal.resultado_bruto = dados['resultado_bruto']
+
+        if 'variacao' in dados:
+            analise_horizontal.variacao = dados['variacao']
+
+        analise_horizontal.save()
+        response = {
+            'id': analise_horizontal.id,
+            'receita_base': analise_horizontal.receita_base,
+            'custo_base': analise_horizontal.custo_base,
+            'periodo_base': analise_horizontal.periodo_base,
+            'receita_atual': analise_horizontal.receita_atual,
+            'custo_atual': analise_horizontal.custo_atual,
+            'periodo_atual': analise_horizontal.periodo_atual,
+            'resultado_bruto': analise_horizontal.resultado_bruto,
+            'variacao': analise_horizontal.variacao,
+        }
+
+        return response
+
+    def delete(self, analisehorizontal):
+        analise_horizontal = SistemaAmortizacaoConstante.query.filter_by(id=analisehorizontal).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(analise_horizontal)
+        analise_horizontal.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaAnaliseHorizontal(Resource):
+
+    def get(self):
+        analise_horizontal = AnaliseHorizontal.query.all()
+        response = [{
+            'id': i.id,
+            'receita_base': i.receita_base,
+            'custo_base': i.amortizacao,
+            'periodo_base': i.taxa,
+            'receita_atual': i.tempo,
+            'custo_atual': i.prestacao,
+            'periodo_atual': i.prestacao,
+            'resultado_bruto': i.prestacao,
+            'variacao': i.prestacao
+        } for i in analise_horizontal]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['taxa'] and dados['tempo'] and dados['saldo_devedor'] > 0:
+            amortizacao_constante = SistemaAmortizacaoConstante(
+                id=dados['id'],
+                saldo_devedor=dados['saldo_devedor'],
+                amortizacao=dados['saldo_devedor'] / dados['tempo'],
+                taxa=dados['taxa'],
+                tempo=dados['tempo'],
+                prestacao=(dados['saldo_devedor'] * (dados['taxa'] / 100)) + (dados['saldo_devedor'] / dados['tempo'])
+            )
+
+        amortizacao_constante.save()
+        response = {
+            'id': amortizacao_constante.id,
+            'saldo_devedor': amortizacao_constante.saldo_devedor,
+            'amortizacao': amortizacao_constante.amortizacao,
+            'taxa': amortizacao_constante.taxa,
+            'tempo': amortizacao_constante.tempo,
+            'prestacao': amortizacao_constante.prestacao
+        }
+        return response
 
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
