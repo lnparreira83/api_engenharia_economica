@@ -16,6 +16,7 @@ from models import AnaliseHorizontal
 from models import AnaliseVertical
 from models import LiquidezImediata
 from models import LiquidezCorrente
+from models import LiquidezSeca
 import numpy
 
 app = Flask(__name__)
@@ -1429,6 +1430,103 @@ class ListaLiquidezCorrente(Resource):
         return response
 
 
+class CalculoLiquidezSeca(Resource):
+    def get(self, liquidezseca):
+        liquidez_seca = LiquidezSeca.query.filter_by(
+            id=liquidezseca).first()
+        try:
+            response = {
+                'ativo_circulante': liquidez_seca.ativo_circulante,
+                'estoques': liquidez_seca.estoques,
+                'liquidez_seca': liquidez_seca.liquidez_seca,
+                'passivo_circulante': liquidez_seca.passivo_circulante,
+                'resultado': liquidez_seca.resultado
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'liquidez seca não encontrada'
+            }
+        return response
+
+    def put(self, liquidezseca):
+        liquidez_seca = LiquidezSeca.query.filter_by(
+            liquidezseca=liquidezseca).first()
+        dados = request.json
+
+        if 'ativo_circulante' in dados:
+            liquidez_seca.ativo_circulante = dados['ativo_circulante']
+
+        if 'estoques' in dados:
+            liquidez_seca.estoques = dados['estoques']
+
+        if 'liquidez_seca' in dados:
+            liquidez_seca.liquidez_seca = dados['liquidez_seca']
+
+        if 'passivo_circulante' in dados:
+            liquidez_seca.passivo_circulante = dados['passivo_circulante']
+
+        if 'resultado' in dados:
+            liquidez_seca.resultado = dados['resultado']
+
+        liquidez_corrente.save()
+        response = {
+            'id': liquidez_corrente.id,
+            'ativo_circulante': liquidez_seca.ativo_circulante,
+            'estoques': liquidez_seca.estoques,
+            'liquidez_seca': liquidez_seca.liquidez_seca,
+            'passivo_circulante': liquidez_seca.passivo_circulante,
+            'resultado': liquidez_seca.resultado
+        }
+
+        return response
+
+    def delete(self, liquidezseca):
+        liquidez_seca = LiquidezSeca.query.filter_by(id=liquidezseca).first()
+        mensagem = 'Liquidez seca {} excluida com sucesso'.format(liquidez_seca)
+        liquidez_seca.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaLiquidezSeca(Resource):
+
+    def get(self):
+        liquidez_seca = LiquidezSeca.query.all()
+        response = [{
+            'id': i.id,
+            'ativo_circulante': i.ativo_circulante,
+            'estoques': i.estoques,
+            'liquidez_seca': i.liquidez_seca,
+            'passivo_circulante': i.passivo_circulante,
+            'resultado': i.resultado
+
+        } for i in liquidez_seca]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['passivo_circulante'] > 0 < dados['ativo_circulante']:
+            liquidez_seca = LiquidezSeca(
+                id=dados['id'],
+                ativo_circulante=dados['ativo_circulante'],
+                estoques=dados['estoques'],
+                liquidez_seca=(dados['ativo_circulante'] - dados['estoques']) / dados['passivo_circulante'],
+                passivo_circulante=dados['passivo_circulante'],
+                resultado="Bom grau de liquidez seca" if ((dados['ativo_circulante'] - dados['estoques']) / dados[
+                    'passivo_circulante']) >= 1 else "Não tem como quitar dividas"
+            )
+
+        liquidez_seca.save()
+        response = {
+            'id': liquidez_seca.id,
+            'ativo_circulante': liquidez_seca.ativo_circulante,
+            'estoques': liquidez_seca.estoques,
+            'liquidez_seca': liquidez_seca.liquidez_seca,
+            'passivo_circulante': liquidez_seca.passivo_circulante,
+            'resultado': liquidez_seca.resultado
+        }
+        return response
+
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
 api.add_resource(Operacao, '/jurosimples/<int:id>/')
@@ -1457,6 +1555,8 @@ api.add_resource(CalculoLiquidezImediata, '/liquidezimediata/<int:liquidezimedia
 api.add_resource(ListaLiquidezImediata, '/listaliquidezimediata/')
 api.add_resource(CalculoLiquidezCorrente, '/liquidezcorrente/<int:liquidezcorrente>/')
 api.add_resource(ListaLiquidezCorrente, '/listaliquidezcorrente/')
+api.add_resource(CalculoLiquidezSeca, '/liquidezseca/<int:liquidezseca>/')
+api.add_resource(ListaLiquidezSeca, '/listaliquidezseca/')
 
 if __name__ == '__main__':
     app.run(debug=True)
