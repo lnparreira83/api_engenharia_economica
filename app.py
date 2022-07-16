@@ -13,6 +13,9 @@ from models import DescontoComposto
 from models import SistemaPrestacaoConstante
 from models import SistemaAmortizacaoConstante
 from models import AnaliseHorizontal
+from models import AnaliseVertical
+from models import LiquidezImediata
+from models import LiquidezCorrente
 import numpy
 
 app = Flask(__name__)
@@ -986,7 +989,7 @@ class ListaAmortizacaoConstante(Resource):
 
 class CalculoAnaliseHorizontal(Resource):
     def get(self, analisehorizontal):
-        analise_horizontal = SistemaAmortizacaoConstante.query.filter_by(
+        analise_horizontal = AnaliseHorizontal.query.filter_by(
             analisehorizontal=analisehorizontal).first()
         try:
             response = {
@@ -997,7 +1000,8 @@ class CalculoAnaliseHorizontal(Resource):
                 'custo_atual': analise_horizontal.custo_atual,
                 'periodo_atual': analise_horizontal.periodo_atual,
                 'resultado_bruto': analise_horizontal.resultado_bruto,
-                'variacao': analise_horizontal.variacao
+                'variacao_receita': analise_horizontal.variacao_receita,
+                'variacao_custo': analise_horizontal.variacao_custo,
             }
         except AttributeError:
             response = {
@@ -1031,8 +1035,11 @@ class CalculoAnaliseHorizontal(Resource):
         if 'resultado_bruto' in dados:
             analise_horizontal.resultado_bruto = dados['resultado_bruto']
 
-        if 'variacao' in dados:
-            analise_horizontal.variacao = dados['variacao']
+        if 'variacao_receita' in dados:
+            analise_horizontal.variacao_receita = dados['variacao_receita']
+
+        if 'variacao_custo' in dados:
+            analise_horizontal.variacao_custo = dados['variacao_custo']
 
         analise_horizontal.save()
         response = {
@@ -1044,13 +1051,14 @@ class CalculoAnaliseHorizontal(Resource):
             'custo_atual': analise_horizontal.custo_atual,
             'periodo_atual': analise_horizontal.periodo_atual,
             'resultado_bruto': analise_horizontal.resultado_bruto,
-            'variacao': analise_horizontal.variacao,
+            'variacao_receita': analise_horizontal.variacao_receita,
+            'variacao_custo': analise_horizontal.variacao_custo
         }
 
         return response
 
     def delete(self, analisehorizontal):
-        analise_horizontal = SistemaAmortizacaoConstante.query.filter_by(id=analisehorizontal).first()
+        analise_horizontal = AnaliseHorizontal.query.filter_by(id=analisehorizontal).first()
         mensagem = 'fator acumulado {} excluido com sucesso'.format(analise_horizontal)
         analise_horizontal.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
@@ -1063,38 +1071,363 @@ class ListaAnaliseHorizontal(Resource):
         response = [{
             'id': i.id,
             'receita_base': i.receita_base,
-            'custo_base': i.amortizacao,
-            'periodo_base': i.taxa,
-            'receita_atual': i.tempo,
-            'custo_atual': i.prestacao,
-            'periodo_atual': i.prestacao,
-            'resultado_bruto': i.prestacao,
-            'variacao': i.prestacao
+            'custo_base': i.custo_base,
+            'periodo_base': i.periodo_base,
+            'receita_atual': i.receita_atual,
+            'custo_atual': i.custo_atual,
+            'periodo_atual': i.periodo_atual,
+            'resultado_bruto': i.resultado_bruto,
+            'variacao_receita': i.variacao_receita,
+            'variacao_custo': i.variacao_custo,
         } for i in analise_horizontal]
         return response
 
     def post(self):
         dados = request.json
-        if dados['taxa'] and dados['tempo'] and dados['saldo_devedor'] > 0:
-            amortizacao_constante = SistemaAmortizacaoConstante(
+        if dados['receita_base'] and dados['custo_base'] and dados['periodo_base'] > 0:
+            analise_horizontal = AnaliseHorizontal(
                 id=dados['id'],
-                saldo_devedor=dados['saldo_devedor'],
-                amortizacao=dados['saldo_devedor'] / dados['tempo'],
-                taxa=dados['taxa'],
-                tempo=dados['tempo'],
-                prestacao=(dados['saldo_devedor'] * (dados['taxa'] / 100)) + (dados['saldo_devedor'] / dados['tempo'])
+                receita_base=dados['receita_base'],
+                custo_base=dados['custo_base'],
+                periodo_base=dados['periodo_base'],
+                receita_atual=dados['receita_atual'],
+                custo_atual=dados['custo_atual'],
+                periodo_atual=dados['periodo_atual'],
+                resultado_bruto=dados['receita_base'] - dados['custo_base'],
+                variacao_receita=(dados['receita_atual'] / dados['receita_base']) * 100,
+                variacao_custo=(dados['custo_atual'] / dados['custo_base']) * 100
             )
 
-        amortizacao_constante.save()
+        analise_horizontal.save()
         response = {
-            'id': amortizacao_constante.id,
-            'saldo_devedor': amortizacao_constante.saldo_devedor,
-            'amortizacao': amortizacao_constante.amortizacao,
-            'taxa': amortizacao_constante.taxa,
-            'tempo': amortizacao_constante.tempo,
-            'prestacao': amortizacao_constante.prestacao
+            'id': analise_horizontal.id,
+            'receita_base': analise_horizontal.receita_base,
+            'custo_base': analise_horizontal.custo_base,
+            'periodo_base': analise_horizontal.periodo_base,
+            'receita_atual': analise_horizontal.receita_atual,
+            'custo_atual': analise_horizontal.custo_atual,
+            'periodo_atual': analise_horizontal.periodo_atual,
+            'resultado_bruto': analise_horizontal.resultado_bruto,
+            'variacao_receita': analise_horizontal.variacao_receita,
+            'variacao_custo': analise_horizontal.variacao_custo
         }
         return response
+
+
+class CalculoAnaliseVertical(Resource):
+    def get(self, analisevertical):
+        analise_vertical = AnaliseVertical.query.filter_by(
+            id=analisevertical).first()
+        try:
+            response = {
+                'receita_base': analise_vertical.receita_base,
+                'custo_base': analise_vertical.custo_base,
+                'periodo_base': analise_vertical.periodo_base,
+                'receita_atual': analise_vertical.receita_atual,
+                'custo_atual': analise_vertical.custo_atual,
+                'periodo_atual': analise_vertical.periodo_atual,
+                'resultado_bruto': analise_vertical.resultado_bruto,
+                'variacao_receita': analise_vertical.variacao_receita,
+                'variacao_custo': analise_vertical.variacao_custo,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'analise vertical não encontrada'
+            }
+        return response
+
+    def put(self, analisevertical):
+        analise_vertical = AnaliseVertical.query.filter_by(
+            analisevertical=analisevertical).first()
+        dados = request.json
+        if 'receita_base' in dados:
+            analise_vertical.receita_base = dados['receita_base']
+
+        if 'custo_base' in dados:
+            analise_vertical.custo_base = dados['custo_base']
+
+        if 'periodo_base' in dados:
+            analise_vertical.periodo_base = dados['periodo_base']
+
+        if 'receita_atual' in dados:
+            analise_vertical.receita_atual = dados['receita_atual']
+
+        if 'custo_atual' in dados:
+            analise_vertical.custo_atual = dados['custo_atual']
+
+        if 'periodo_atual' in dados:
+            analise_vertical.periodo_atual = dados['periodo_atual']
+
+        if 'resultado_bruto' in dados:
+            analise_vertical.resultado_bruto = dados['resultado_bruto']
+
+        if 'variacao_receita' in dados:
+            analise_vertical.variacao_receita = dados['variacao_receita']
+
+        if 'variacao_custo' in dados:
+            analise_vertical.variacao_custo = dados['variacao_custo']
+
+        analise_vertical.save()
+        response = {
+            'id': analise_vertical.id,
+            'receita_base': analise_vertical.receita_base,
+            'custo_base': analise_vertical.custo_base,
+            'periodo_base': analise_vertical.periodo_base,
+            'receita_atual': analise_vertical.receita_atual,
+            'custo_atual': analise_vertical.custo_atual,
+            'periodo_atual': analise_vertical.periodo_atual,
+            'resultado_bruto': analise_vertical.resultado_bruto,
+            'variacao_receita': analise_vertical.variacao_receita,
+            'variacao_custo': analise_vertical.variacao_custo
+        }
+
+        return response
+
+    def delete(self, analisevertical):
+        analise_vertical = AnaliseVertical.query.filter_by(id=analisevertical).first()
+        mensagem = 'fator acumulado {} excluido com sucesso'.format(analise_vertical)
+        analise_vertical.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaAnaliseVertical(Resource):
+
+    def get(self):
+        analise_vertical = AnaliseVertical.query.all()
+        response = [{
+            'id': i.id,
+            'receita_base': i.receita_base,
+            'custo_base': i.custo_base,
+            'periodo_base': i.periodo_base,
+            'receita_atual': i.receita_atual,
+            'custo_atual': i.custo_atual,
+            'periodo_atual': i.periodo_atual,
+            'resultado_bruto': i.resultado_bruto,
+            'variacao_receita': i.variacao_receita,
+            'variacao_custo': i.variacao_custo,
+        } for i in analise_vertical]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['receita_base'] and dados['custo_base'] and dados['periodo_base'] > 0:
+            analise_vertical = AnaliseVertical(
+                id=dados['id'],
+                receita_base=dados['receita_base'],
+                custo_base=dados['custo_base'],
+                periodo_base=dados['periodo_base'],
+                receita_atual=dados['receita_atual'],
+                custo_atual=dados['custo_atual'],
+                periodo_atual=dados['periodo_atual'],
+                resultado_bruto=dados['receita_base'] - dados['custo_base'],
+                variacao_receita=(dados['receita_base'] / dados['custo_base']) * 100,
+                variacao_custo=(dados['receita_atual'] / dados['custo_atual']) * 100
+            )
+
+        analise_vertical.save()
+        response = {
+            'id': analise_vertical.id,
+            'receita_base': analise_vertical.receita_base,
+            'custo_base': analise_vertical.custo_base,
+            'periodo_base': analise_vertical.periodo_base,
+            'receita_atual': analise_vertical.receita_atual,
+            'custo_atual': analise_vertical.custo_atual,
+            'periodo_atual': analise_vertical.periodo_atual,
+            'resultado_bruto': analise_vertical.resultado_bruto,
+            'variacao_receita': analise_vertical.variacao_receita,
+            'variacao_custo': analise_vertical.variacao_custo
+        }
+        return response
+
+
+class CalculoLiquidezImediata(Resource):
+    def get(self, liquidezimediata):
+        liquidez_imediata = LiquidezImediata.query.filter_by(
+            id=liquidezimediata).first()
+        try:
+            response = {
+                'caixa': liquidez_imediata.caixa,
+                'equivalentes_caixa': liquidez_imediata.equivalentes_caixa,
+                'liquidez_imediata': liquidez_imediata.liquidez_imediata,
+                'passivo_circulante': liquidez_imediata.passivo_circulante,
+                'resultado': liquidez_imediata.resultado
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'liquidez imediata não encontrada'
+            }
+        return response
+
+    def put(self, liquidezimediata):
+        liquidez_imediata = LiquidezImediata.query.filter_by(
+            liquidezimediata=liquidezimediata).first()
+        dados = request.json
+
+        if 'caixa' in dados:
+            liquidez_imediata.caixa = dados['caixa']
+
+        if 'equivalentes_caixa' in dados:
+            liquidez_imediata.equivalentes_caixa = dados['equivalentes_caixa']
+
+        if 'liquidez_imediata' in dados:
+            liquidez_imediata.liquidez_imediata = dados['liquidez_imediata']
+
+        if 'passivo_circulante' in dados:
+            liquidez_imediata.passivo_circulante = dados['passivo_circulante']
+
+        if 'resultado' in dados:
+            liquidez_imediata.resultado = dados['resultado']
+
+        liquidez_imediata.save()
+        response = {
+            'id': liquidez_imediata.id,
+            'caixa': liquidez_imediata.caixa,
+            'equivalentes_caixa': liquidez_imediata.equivalentes_caixa,
+            'liquidez_imediata': liquidez_imediata.liquidez_imediata,
+            'passivo_circulante': liquidez_imediata.passivo_circulante,
+            'resultado': liquidez_imediata.resultado
+        }
+
+        return response
+
+    def delete(self, liquidezimediata):
+        liquidez_imediata = LiquidezImediata.query.filter_by(id=liquidezimediata).first()
+        mensagem = 'Liquidez imediata {} excluida com sucesso'.format(liquidez_imediata)
+        liquidez_imediata.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaLiquidezImediata(Resource):
+
+    def get(self):
+        liquidez_imediata = LiquidezImediata.query.all()
+        response = [{
+            'id': i.id,
+            'caixa': i.caixa,
+            'equivalentes_caixa': i.equivalentes_caixa,
+            'liquidez_imediata': i.liquidez_imediata,
+            'passivo_circulante': i.passivo_circulante,
+            'resultado': i.resultado
+
+        } for i in liquidez_imediata]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['passivo_circulante'] > 0 < dados['caixa']:
+            liquidez_imediata = LiquidezImediata(
+                id=dados['id'],
+                caixa=dados['caixa'],
+                equivalentes_caixa=dados['equivalentes_caixa'],
+                liquidez_imediata=(dados['caixa'] + dados['equivalentes_caixa']) / dados['passivo_circulante'] * 100,
+                passivo_circulante=dados['passivo_circulante'],
+                resultado="Bom grau de liquidez" if ((dados['caixa'] + dados['equivalentes_caixa']) / dados[
+                    'passivo_circulante'] * 100) >= 100 else "Não tem como quitar dividas"
+            )
+
+        liquidez_imediata.save()
+        response = {
+            'id': liquidez_imediata.id,
+            'caixa': liquidez_imediata.caixa,
+            'equivalentes_caixa': liquidez_imediata.equivalentes_caixa,
+            'liquidez_imediata': liquidez_imediata.liquidez_imediata,
+            'passivo_circulante': liquidez_imediata.passivo_circulante,
+            'resultado': liquidez_imediata.resultado
+        }
+        return response
+
+
+class CalculoLiquidezCorrente(Resource):
+    def get(self, liquidezcorrente):
+        liquidez_corrente = LiquidezCorrente.query.filter_by(
+            id=liquidezcorrente).first()
+        try:
+            response = {
+                'ativo_circulante': liquidez_corrente.ativo_circulante,
+                'liquidez_corrente': liquidez_corrente.liquidez_corrente,
+                'passivo_circulante': liquidez_corrente.passivo_circulante,
+                'resultado': liquidez_corrente.resultado
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'liquidez corrente não encontrada'
+            }
+        return response
+
+    def put(self, liquidezcorrente):
+        liquidez_corrente = LiquidezCorrente.query.filter_by(
+            liquidezcorrente=liquidezcorrente).first()
+        dados = request.json
+
+        if 'ativo_circulante' in dados:
+            liquidez_corrente.ativo_circulante = dados['ativo_circulante']
+
+        if 'liquidez_corrente' in dados:
+            liquidez_corrente.liquidez_corrente = dados['liquidez_corrente']
+
+        if 'passivo_circulante' in dados:
+            liquidez_corrente.passivo_circulante = dados['passivo_circulante']
+
+        if 'resultado' in dados:
+            liquidez_corrente.resultado = dados['resultado']
+
+        liquidez_corrente.save()
+        response = {
+            'id': liquidez_corrente.id,
+            'ativo_circulante': liquidez_corrente.ativo_circulante,
+            'liquidez_corrente': liquidez_corrente.liquidez_corrente,
+            'passivo_circulante': liquidez_corrente.passivo_circulante,
+            'resultado': liquidez_corrente.resultado
+        }
+
+        return response
+
+    def delete(self, liquidezcorrente):
+        liquidez_corrente = LiquidezCorrente.query.filter_by(id=liquidezcorrente).first()
+        mensagem = 'Liquidez corrente {} excluida com sucesso'.format(liquidez_corrente)
+        liquidez_corrente.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaLiquidezCorrente(Resource):
+
+    def get(self):
+        liquidez_corrente = LiquidezCorrente.query.all()
+        response = [{
+            'id': i.id,
+            'ativo_circulante': i.ativo_circulante,
+            'liquidez_corrente': i.liquidez_corrente,
+            'passivo_circulante': i.passivo_circulante,
+            'resultado': i.resultado
+
+        } for i in liquidez_corrente]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['passivo_circulante'] > 0 < dados['ativo_circulante']:
+            liquidez_corrente = LiquidezCorrente(
+                id=dados['id'],
+                ativo_circulante=dados['ativo_circulante'],
+                liquidez_corrente=dados['ativo_circulante'] / dados['passivo_circulante'],
+                passivo_circulante=dados['passivo_circulante'],
+                resultado="Bom grau de liquidez corrente" if (dados['ativo_circulante']  / dados[
+                    'passivo_circulante']) >= 1 else "Não tem como quitar dividas"
+            )
+
+        liquidez_corrente.save()
+        response = {
+            'id': liquidez_corrente.id,
+            'ativo_circulante': liquidez_corrente.ativo_circulante,
+            'liquidez_corrente': liquidez_corrente.liquidez_corrente,
+            'passivo_circulante': liquidez_corrente.passivo_circulante,
+            'resultado': liquidez_corrente.resultado
+        }
+        return response
+
 
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
@@ -1116,6 +1449,14 @@ api.add_resource(CalculoPrestacaoConstante, '/prestacaoconstante/<int:prestacaoc
 api.add_resource(ListaPrestacaoConstante, '/listaprestacaoconstante/')
 api.add_resource(CalculoAmortizacaoConstante, '/amortizacaoconstante/<int:amortizacaoconstante>/')
 api.add_resource(ListaAmortizacaoConstante, '/listaamortizacaoconstante/')
+api.add_resource(CalculoAnaliseHorizontal, '/analisehorizontal/<int:analisehorizontal>/')
+api.add_resource(ListaAnaliseHorizontal, '/listaanalisehorizontal/')
+api.add_resource(CalculoAnaliseVertical, '/analisevertical/<int:analisevertical>/')
+api.add_resource(ListaAnaliseVertical, '/listaanalisevertical/')
+api.add_resource(CalculoLiquidezImediata, '/liquidezimediata/<int:liquidezimediata>/')
+api.add_resource(ListaLiquidezImediata, '/listaliquidezimediata/')
+api.add_resource(CalculoLiquidezCorrente, '/liquidezcorrente/<int:liquidezcorrente>/')
+api.add_resource(ListaLiquidezCorrente, '/listaliquidezcorrente/')
 
 if __name__ == '__main__':
     app.run(debug=True)

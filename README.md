@@ -11,3 +11,7 @@
  * Desconto Composto
  * Sitema de Prestação Constante
  * Sistema de Amortização Constante
+ * Analise Horizontal
+ * Analise Vertical
+ * Liquidez Imediata
+ * Liquidez Corrente

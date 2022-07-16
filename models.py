@@ -211,7 +211,7 @@ class SistemaAmortizacaoConstante(Base):
 
 
 class AnaliseHorizontal(Base):
-    __tablename__ = 'analisehorizontal'
+    __tablename__ = 'analisehorizontal_'
     id = Column(Integer, primary_key=True)
     receita_base = Column(Float())
     custo_base = Column(Float())
@@ -220,10 +220,75 @@ class AnaliseHorizontal(Base):
     custo_atual = Column(Float())
     periodo_atual = Column(Integer())
     resultado_bruto = Column(Float())
-    variacao = Column(Float())
+    variacao_receita = Column(Float())
+    variacao_custo = Column(Float())
 
     def __repr__(self):
-        return '<Analise horizontal {}>'.format(self.saldo_devedor)
+        return '<Analise horizontal {}>'.format(self.variacao_custo)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+class AnaliseVertical(Base):
+    __tablename__ = 'analisevertical'
+    id = Column(Integer, primary_key=True)
+    receita_base = Column(Float())
+    custo_base = Column(Float())
+    periodo_base = Column(Integer())
+    receita_atual = Column(Float())
+    custo_atual = Column(Float())
+    periodo_atual = Column(Integer())
+    resultado_bruto = Column(Float())
+    variacao_receita = Column(Float())
+    variacao_custo = Column(Float())
+
+    def __repr__(self):
+        return '<Analise horizontal {}>'.format(self.variacao_custo)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class LiquidezImediata(Base):
+    __tablename__ = 'liquidezimediata_'
+    id = Column(Integer, primary_key=True)
+    caixa = Column(Float())
+    equivalentes_caixa = Column(Float())
+    liquidez_imediata = Column(Float())
+    passivo_circulante = Column(Float())
+    resultado = Column(String())
+
+    def __repr__(self):
+        return '<Liquidez imediata {}>'.format(self.resultado)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+class LiquidezCorrente(Base):
+    __tablename__ = 'liquidezcorrente'
+    id = Column(Integer, primary_key=True)
+    ativo_circulante = Column(Float())
+    liquidez_corrente = Column(Float())
+    passivo_circulante = Column(Float())
+    resultado = Column(String())
+
+    def __repr__(self):
+        return '<Liquidez corrente {}>'.format(self.resultado)
 
     def save(self):
         db_session.add(self)
