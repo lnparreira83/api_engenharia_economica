@@ -15,3 +15,4 @@
  * Analise Vertical
  * Liquidez Imediata
  * Liquidez Corrente
+ * Liquidez Seca
