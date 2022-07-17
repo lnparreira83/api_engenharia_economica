@@ -18,6 +18,10 @@ from models import LiquidezImediata
 from models import LiquidezCorrente
 from models import LiquidezSeca
 from models import LiquidezGeral
+from models import MargemLiquida
+from models import GiroAtivo
+from models import RentabilidadeAtivo
+from models import RentabilidadePl
 import numpy
 
 app = Flask(__name__)
@@ -1470,9 +1474,9 @@ class CalculoLiquidezSeca(Resource):
         if 'resultado' in dados:
             liquidez_seca.resultado = dados['resultado']
 
-        liquidez_corrente.save()
+        liquidez_seca.save()
         response = {
-            'id': liquidez_corrente.id,
+            'id': liquidez_seca.id,
             'ativo_circulante': liquidez_seca.ativo_circulante,
             'estoques': liquidez_seca.estoques,
             'liquidez_seca': liquidez_seca.liquidez_seca,
@@ -1616,7 +1620,7 @@ class ListaLiquidezGeral(Resource):
                 ativo_circulante=dados['ativo_circulante'],
                 realizavel_longo_prazo=dados['realizavel_longo_prazo'],
                 liquidez_geral=(dados['ativo_circulante'] + dados['realizavel_longo_prazo']) / (
-                            dados['passivo_circulante'] + dados['exigivel_longo_prazo']),
+                        dados['passivo_circulante'] + dados['exigivel_longo_prazo']),
                 passivo_circulante=dados['passivo_circulante'],
                 exigivel_longo_prazo=dados['exigivel_longo_prazo'],
                 resultado="Bom grau de liquidez geral" if (dados['ativo_circulante'] + dados[
@@ -1633,6 +1637,87 @@ class ListaLiquidezGeral(Resource):
             'passivo_circulante': liquidez_geral.passivo_circulante,
             'exigivel_longo_prazo': liquidez_geral.exigivel_longo_prazo,
             'resultado': liquidez_geral.resultado
+        }
+        return response
+
+
+class CalculoMargemLiquida(Resource):
+    def get(self, margemliquida):
+        margem_liquida = LiquidezGeral.query.filter_by(
+            id=margemliquida).first()
+        try:
+            response = {
+                'lucro_liquido': margem_liquida.lucro_liquido,
+                'receita_liquida': margem_liquida.receita_liquida,
+                'margem_liquida': margem_liquida.margem_liquida,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Margem liquida não encontrada'
+            }
+        return response
+
+    def put(self, margemliquida):
+        margem_liquida = MargemLiquida.query.filter_by(
+            margemliquida=margemliquida).first()
+        dados = request.json
+
+        if 'lucro_liquido' in dados:
+            margem_liquida.lucro_liquido = dados['lucro_liquido']
+
+        if 'receita_liquida' in dados:
+            margem_liquida.receita_liquida = dados['receita_liquida']
+
+        if 'margem_liquida' in dados:
+            margem_liquida.margem_liquida = dados['margem_liquida']
+
+        margem_liquida.save()
+        response = {
+            'id': margem_liquida.id,
+            'lucro_liquido': margem_liquida.lucro_liquido,
+            'receita_liquida': margem_liquida.receita_liquida,
+            'margem_liquida': margem_liquida.margem_liquida
+        }
+
+        return response
+
+    def delete(self, margemliquida):
+        margem_liquida = MargemLiquida.query.filter_by(id=margemliquida).first()
+        mensagem = 'Margem liquida {} excluida com sucesso'.format(margem_liquida)
+        margem_liquida.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaMargemLiquida(Resource):
+
+    def get(self):
+        margem_liquida = MargemLiquida.query.all()
+        response = [{
+            'id': i.id,
+            'lucro_liquido': i.lucro_liquido,
+            'receita_liquida': i.receita_liquida,
+            'margem_liquida': i.margem_liquida
+
+        } for i in margem_liquida]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['lucro_liquido'] > 0 < dados['receita_liquida']:
+            margem_liquida = MargemLiquida(
+                id=dados['id'],
+                lucro_liquido=dados['lucro_liquido'],
+                receita_liquida=dados['receita_liquida'],
+                margem_liquida=(dados['lucro_liquido'] / dados['receita_liquida']) * 100,
+            )
+
+        margem_liquida.save()
+        response = {
+            'id': margem_liquida.id,
+            'lucro_liquido': margem_liquida.lucro_liquido,
+            'receita_liquida': margem_liquida.receita_liquida,
+            'margem_liquida': margem_liquida.margem_liquida
         }
         return response
 
@@ -1669,7 +1754,8 @@ api.add_resource(CalculoLiquidezSeca, '/liquidezseca/<int:liquidezseca>/')
 api.add_resource(ListaLiquidezSeca, '/listaliquidezseca/')
 api.add_resource(CalculoLiquidezGeral, '/liquidezgeral/<int:liquidezgeral>/')
 api.add_resource(ListaLiquidezGeral, '/listaliquidezgeral/')
-
+api.add_resource(CalculoMargemLiquida, '/margemliquida/<int:margemliquida>/')
+api.add_resource(ListaMargemLiquida, '/listamargemliquida/')
 
 if __name__ == '__main__':
     app.run(debug=True)

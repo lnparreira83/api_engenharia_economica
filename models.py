@@ -234,6 +234,7 @@ class AnaliseHorizontal(Base):
         db_session.delete(self)
         db_session.commit()
 
+
 class AnaliseVertical(Base):
     __tablename__ = 'analisevertical'
     id = Column(Integer, primary_key=True)
@@ -279,6 +280,7 @@ class LiquidezImediata(Base):
         db_session.delete(self)
         db_session.commit()
 
+
 class LiquidezCorrente(Base):
     __tablename__ = 'liquidezcorrente'
     id = Column(Integer, primary_key=True)
@@ -319,6 +321,7 @@ class LiquidezSeca(Base):
         db_session.delete(self)
         db_session.commit()
 
+
 class LiquidezGeral(Base):
     __tablename__ = 'liquidezgeral'
     id = Column(Integer, primary_key=True)
@@ -331,6 +334,82 @@ class LiquidezGeral(Base):
 
     def __repr__(self):
         return '<Liquidez geral {}>'.format(self.resultado)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class MargemLiquida(Base):
+    __tablename__ = 'margemliquida'
+    id = Column(Integer, primary_key=True)
+    lucro_liquido = Column(Float())
+    receita_liquida = Column(Float())
+    margem_liquida = Column(Float())
+
+    def __repr__(self):
+        return '<Margem liquida {}>'.format(self.margem_liquida)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class GiroAtivo(Base):
+    __tablename__ = 'giroativo'
+    id = Column(Integer, primary_key=True)
+    ativo = Column(Float())
+    receita_liquida = Column(Float())
+    giro_ativo = Column(Float())
+
+    def __repr__(self):
+        return '<Giro ativo {}>'.format(self.giro_ativo)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class RentabilidadeAtivo(Base):
+    __tablename__ = 'rentabilidadeativo'
+    id = Column(Integer, primary_key=True)
+    luco_liquido = Column(Float())
+    ativo = Column(Float())
+    rentabilidade_ativo = Column(Float())
+
+    def __repr__(self):
+        return '<Rentabilidade do ativo {}>'.format(self.rentabilidade_ativo)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class RentabilidadePl(Base):
+    __tablename__ = 'rentabilidadepl'
+    id = Column(Integer, primary_key=True)
+    luco_liquido = Column(Float())
+    patrimonio_liquido = Column(Float())
+    rentabilidade_pl = Column(Float())
+
+    def __repr__(self):
+        return '<Rentabilidade do PL {}>'.format(self.rentabilidade_pl)
 
     def save(self):
         db_session.add(self)
