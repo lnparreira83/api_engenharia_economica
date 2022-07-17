@@ -1702,6 +1702,7 @@ class ListaMargemLiquida(Resource):
         }
         return response
 
+
 class CalculoGiroAtivo(Resource):
     def get(self, giroativo):
         giro_ativo = GiroAtivo.query.filter_by(
@@ -1749,6 +1750,7 @@ class CalculoGiroAtivo(Resource):
         giro_ativo.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
 
+
 class ListaGiroAtivo(Resource):
 
     def get(self):
@@ -1780,6 +1782,7 @@ class ListaGiroAtivo(Resource):
             'giro_ativo': giro_ativo.giro_ativo
         }
         return response
+
 
 class CalculoRentabilidadeAtivo(Resource):
     def get(self, rentabilidadeativo):
@@ -1827,6 +1830,7 @@ class CalculoRentabilidadeAtivo(Resource):
         mensagem = 'Rentabilidade do ativo {} excluido com sucesso'.format(rentabilidade_ativo)
         rentabilidade_ativo.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
+
 
 class ListaRentabilidadeAtivo(Resource):
 
@@ -1908,6 +1912,7 @@ class CalculoRentabilidadePl(Resource):
         rentabilidade_pl.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
 
+
 class ListaRentabilidadePl(Resource):
 
     def get(self):
@@ -1988,6 +1993,7 @@ class CalculoPrazoMedioEstocagem(Resource):
         prazo_medio_estocagem.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
 
+
 class ListaPrazoMedioEstocagem(Resource):
 
     def get(self):
@@ -2019,6 +2025,7 @@ class ListaPrazoMedioEstocagem(Resource):
             'ciclo_estocagem': prazo_medio_estocagem.ciclo_estocagem
         }
         return response
+
 
 class CalculoPrazoMedioPagamento(Resource):
     def get(self, prazomediopagamento):
@@ -2067,6 +2074,7 @@ class CalculoPrazoMedioPagamento(Resource):
         prazo_medio_pagamento.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
 
+
 class ListaPrazoMedioPagamento(Resource):
 
     def get(self):
@@ -2098,6 +2106,7 @@ class ListaPrazoMedioPagamento(Resource):
             'ciclo_pagamento': prazo_medio_pagamento.ciclo_pagamento
         }
         return response
+
 
 class CalculoPrazoMedioRecebimento(Resource):
     def get(self, prazomediorecebimento):
@@ -2145,6 +2154,7 @@ class CalculoPrazoMedioRecebimento(Resource):
         mensagem = 'Prazo medio de recebimento {} excluida com sucesso'.format(prazo_medio_recebimento)
         prazo_medio_recebimento.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
+
 
 class ListaPrazoMedioRecebimento(Resource):
 
@@ -2218,9 +2228,9 @@ class CalculoCiclos(Resource):
         if 'ciclo_financeiro' in dados:
             calculo_ciclo.ciclo_financeiro = dados['ciclo_financeiro']
 
-        prazo_medio_recebimento.save()
+        calculo_ciclo.save()
         response = {
-            'id': prazo_medio_recebimento.id,
+            'id': calculo_ciclo.id,
             'prazo_medio_estocagem': calculo_ciclo.prazo_medio_estocagem,
             'prazo_medio_recebimento': calculo_ciclo.prazo_medio_recebimento,
             'prazo_medio_pagamento': calculo_ciclo.prazo_medio_pagamento,
@@ -2235,6 +2245,7 @@ class CalculoCiclos(Resource):
         mensagem = 'Ciclo {} excluido com sucesso'.format(calculo_ciclos)
         calculo_ciclos.delete()
         return {'status': 'sucesso', 'mensagem': mensagem}
+
 
 class ListaCiclos(Resource):
 
@@ -2260,7 +2271,8 @@ class ListaCiclos(Resource):
                 prazo_medio_recebimento=dados['prazo_medio_recebimento'],
                 prazo_medio_pagamento=dados['prazo_medio_pagamento'],
                 ciclo_operacional=dados['prazo_medio_estocagem'] + dados['prazo_medio_recebimento'],
-                ciclo_financeiro=(dados['prazo_medio_estocagem'] + dados['prazo_medio_recebimento']) - dados['prazo_medio_pagamento']
+                ciclo_financeiro=(dados['prazo_medio_estocagem'] + dados['prazo_medio_recebimento']) - dados[
+                    'prazo_medio_pagamento']
             )
 
         calculo_ciclo.save()
@@ -2323,7 +2335,6 @@ api.add_resource(CalculoPrazoMedioRecebimento, '/prazomediorecebimento/<int:praz
 api.add_resource(ListaPrazoMedioRecebimento, '/listaprazomediorecebimento/')
 api.add_resource(CalculoCiclos, '/ciclos/<int:ciclos>/')
 api.add_resource(ListaCiclos, '/listaciclos/')
-
 
 if __name__ == '__main__':
     app.run(debug=True)
