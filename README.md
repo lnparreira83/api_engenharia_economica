@@ -17,3 +17,4 @@
  * Liquidez Corrente
  * Liquidez Seca
  * Liquidez Geral
+ * Margem Liquida
