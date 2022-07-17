@@ -2,26 +2,7 @@ import math
 
 from flask import Flask, request
 from flask_restful import Resource, Api
-from models import OperacaoJuroComposto
-from models import Operacoes
-from models import OperacaoTaxaNominal
-from models import OperacaoTaxaEfetiva
-from models import OperacaoTaxaJurosReal
-from models import FatorAcumulacaoCapital
-from models import DescontoSimples
-from models import DescontoComposto
-from models import SistemaPrestacaoConstante
-from models import SistemaAmortizacaoConstante
-from models import AnaliseHorizontal
-from models import AnaliseVertical
-from models import LiquidezImediata
-from models import LiquidezCorrente
-from models import LiquidezSeca
-from models import LiquidezGeral
-from models import MargemLiquida
-from models import GiroAtivo
-from models import RentabilidadeAtivo
-from models import RentabilidadePl
+from models import *
 import numpy
 
 app = Flask(__name__)
@@ -1803,7 +1784,7 @@ class ListaGiroAtivo(Resource):
 class CalculoRentabilidadeAtivo(Resource):
     def get(self, rentabilidadeativo):
         rentabilidade_ativo = RentabilidadeAtivo.query.filter_by(
-            id=giroativo).first()
+            id=rentabilidadeativo).first()
         try:
             response = {
                 'lucro_liquido': rentabilidade_ativo.lucro_liquido,
@@ -1883,7 +1864,7 @@ class ListaRentabilidadeAtivo(Resource):
 class CalculoRentabilidadePl(Resource):
     def get(self, rentabilidadepl):
         rentabilidade_pl = RentabilidadePl.query.filter_by(
-            id=giroativo).first()
+            id=rentabilidadepl).first()
         try:
             response = {
                 'lucro_liquido': rentabilidade_pl.lucro_liquido,
@@ -1960,6 +1941,339 @@ class ListaRentabilidadePl(Resource):
         return response
 
 
+class CalculoPrazoMedioEstocagem(Resource):
+    def get(self, prazomedioestocagem):
+        prazo_medio_estocagem = PrazoMedioEstocagem.query.filter_by(
+            id=prazomedioestocagem).first()
+        try:
+            response = {
+                'ciclo_estocagem': prazo_medio_estocagem.ciclo_estocagem,
+                'estoque_medio': prazo_medio_estocagem.estoque_medio,
+                'custo_mercadorias_vendidas': prazo_medio_estocagem.custo_mercadorias_vendidas,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Prazo medio de estocagem não encontrado'
+            }
+        return response
+
+    def put(self, prazomedioestocagem):
+        prazo_medio_estocagem = PrazoMedioEstocagem.query.filter_by(
+            prazomedioestocagem=prazomedioestocagem).first()
+        dados = request.json
+
+        if 'ciclo_estocagem' in dados:
+            prazo_medio_estocagem.ciclo_estocagem = dados['ciclo_estocagem']
+
+        if 'estoque_medio' in dados:
+            prazo_medio_estocagem.estoque_medio = dados['estoque_medio']
+
+        if 'custo_mercadorias_vendidas' in dados:
+            prazo_medio_estocagem.estoque_medio = dados['custo_mercadorias_vendidas']
+
+        prazo_medio_estocagem.save()
+        response = {
+            'id': prazo_medio_estocagem.id,
+            'ciclo_estocagem': prazo_medio_estocagem.ciclo_estocagem,
+            'estoque_medio': prazo_medio_estocagem.estoque_medio,
+            'custo_mercadorias_vendidas': prazo_medio_estocagem.custo_mercadorias_vendidas
+        }
+
+        return response
+
+    def delete(self, prazomedioestocagem):
+        prazo_medio_estocagem = PrazoMedioEstocagem.query.filter_by(id=prazomedioestocagem).first()
+        mensagem = 'Prazo medio de estocagem {} excluida com sucesso'.format(prazo_medio_estocagem)
+        prazo_medio_estocagem.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaPrazoMedioEstocagem(Resource):
+
+    def get(self):
+        prazo_medio_estocagem = PrazoMedioEstocagem.query.all()
+        response = [{
+            'id': i.id,
+            'ciclo_estocagem': i.ciclo_estocagem,
+            'estoque_medio': i.estoque_medio,
+            'custo_mercadorias_vendidas': i.custo_mercadorias_vendidas
+
+        } for i in prazo_medio_estocagem]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['estoque_medio'] > 0 < dados['custo_mercadorias_vendidas']:
+            prazo_medio_estocagem = PrazoMedioEstocagem(
+                id=dados['id'],
+                estoque_medio=dados['estoque_medio'],
+                custo_mercadorias_vendidas=dados['custo_mercadorias_vendidas'],
+                ciclo_estocagem=(dados['estoque_medio'] / dados['custo_mercadorias_vendidas']) * 360
+            )
+
+        prazo_medio_estocagem.save()
+        response = {
+            'id': prazo_medio_estocagem.id,
+            'estoque_medio': prazo_medio_estocagem.estoque_medio,
+            'custo_mercadorias_vendidas': prazo_medio_estocagem.custo_mercadorias_vendidas,
+            'ciclo_estocagem': prazo_medio_estocagem.ciclo_estocagem
+        }
+        return response
+
+class CalculoPrazoMedioPagamento(Resource):
+    def get(self, prazomediopagamento):
+        prazo_medio_pagamento = PrazoMedioPagamento.query.filter_by(
+            id=prazomediopagamento).first()
+        try:
+            response = {
+                'ciclo_pagamento': prazo_medio_pagamento.ciclo_pagamento,
+                'fornecedores_medios': prazo_medio_estocagem.fornecedores_medios,
+                'custo_mercadorias_vendidas': prazo_medio_estocagem.custo_mercadorias_vendidas,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Prazo medio de estocagem não encontrado'
+            }
+        return response
+
+    def put(self, prazomediopagamento):
+        prazo_medio_pagamento = PrazoMedioPagamento.query.filter_by(
+            prazomediopagamento=prazomediopagamento).first()
+        dados = request.json
+
+        if 'ciclo_pagamento' in dados:
+            prazo_medio_pagamento.ciclo_pagamento = dados['ciclo_pagamento']
+
+        if 'fornecedores_medios' in dados:
+            prazo_medio_pagamento.fornecedores_medios = dados['estoque_medio']
+
+        if 'custo_mercadorias_vendidas' in dados:
+            prazo_medio_pagamento.custo_mercadorias_vendidas = dados['custo_mercadorias_vendidas']
+
+        prazo_medio_pagamento.save()
+        response = {
+            'id': prazo_medio_pagamento.id,
+            'ciclo_pagamento': prazo_medio_pagamento.ciclo_pagamento,
+            'fornecedores_medios': prazo_medio_pagamento.fornecedores_medios,
+            'custo_mercadorias_vendidas': prazo_medio_pagamento.custo_mercadorias_vendidas
+        }
+
+        return response
+
+    def delete(self, prazomediopagamento):
+        prazo_medio_pagamento = PrazoMedioPagamento.query.filter_by(id=prazomediopagamento).first()
+        mensagem = 'Prazo medio de pagamento {} excluida com sucesso'.format(prazo_medio_pagamento)
+        prazo_medio_pagamento.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaPrazoMedioPagamento(Resource):
+
+    def get(self):
+        prazo_medio_pagamento = PrazoMedioPagamento.query.all()
+        response = [{
+            'id': i.id,
+            'ciclo_pagamento': i.ciclo_pagamento,
+            'fornecedores_medios': i.fornecedores_medios,
+            'custo_mercadorias_vendidas': i.custo_mercadorias_vendidas
+
+        } for i in prazo_medio_pagamento]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['fornecedores_medios'] > 0 < dados['custo_mercadorias_vendidas']:
+            prazo_medio_pagamento = PrazoMedioPagamento(
+                id=dados['id'],
+                fornecedores_medios=dados['fornecedores_medios'],
+                custo_mercadorias_vendidas=dados['custo_mercadorias_vendidas'],
+                ciclo_pagamento=(dados['fornecedores_medios'] / dados['custo_mercadorias_vendidas']) * 360
+            )
+
+        prazo_medio_pagamento.save()
+        response = {
+            'id': prazo_medio_pagamento.id,
+            'fornecedores_medios': prazo_medio_pagamento.fornecedores_medios,
+            'custo_mercadorias_vendidas': prazo_medio_pagamento.custo_mercadorias_vendidas,
+            'ciclo_pagamento': prazo_medio_pagamento.ciclo_pagamento
+        }
+        return response
+
+class CalculoPrazoMedioRecebimento(Resource):
+    def get(self, prazomediorecebimento):
+        prazo_medio_recebimento = PrazoMedioRecebimento.query.filter_by(
+            id=prazomediorecebimento).first()
+        try:
+            response = {
+                'ciclo_recebimento': prazo_medio_recebimento.ciclo_recebimento,
+                'clientes_medios': prazo_medio_recebimento.clientes_medios,
+                'receita_bruta': prazo_medio_recebimento.receita_bruta,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Prazo medio de recebimento não encontrado'
+            }
+        return response
+
+    def put(self, prazomediorecebimento):
+        prazo_medio_recebimento = PrazoMedioRecebimento.query.filter_by(
+            prazomediorecebimento=prazomediorecebimento).first()
+        dados = request.json
+
+        if 'ciclo_recebimento' in dados:
+            prazo_medio_recebimento.ciclo_recebimento = dados['ciclo_recebimento']
+
+        if 'clientes_medios' in dados:
+            prazo_medio_recebimento.clientes_medios = dados['clientes_medios']
+
+        if 'receita_bruta' in dados:
+            prazo_medio_recebimento.receita_bruta = dados['receita_bruta']
+
+        prazo_medio_recebimento.save()
+        response = {
+            'id': prazo_medio_recebimento.id,
+            'ciclo_recebimento': prazo_medio_recebimento.ciclo_recebimento,
+            'clientes_medios': prazo_medio_recebimento.clientes_medios,
+            'receita_bruta': prazo_medio_recebimento.receita_bruta
+        }
+
+        return response
+
+    def delete(self, prazomediorecebimento):
+        prazo_medio_recebimento = PrazoMedioRecebimento.query.filter_by(id=prazomediorecebimento).first()
+        mensagem = 'Prazo medio de recebimento {} excluida com sucesso'.format(prazo_medio_recebimento)
+        prazo_medio_recebimento.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaPrazoMedioRecebimento(Resource):
+
+    def get(self):
+        prazo_medio_recebimento = PrazoMedioRecebimento.query.all()
+        response = [{
+            'id': i.id,
+            'ciclo_recebimento': i.ciclo_recebimento,
+            'clientes_medios': i.clientes_medios,
+            'receita_bruta': i.receita_bruta
+
+        } for i in prazo_medio_recebimento]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['clientes_medios'] > 0 < dados['receita_bruta']:
+            prazo_medio_recebimento = PrazoMedioRecebimento(
+                id=dados['id'],
+                clientes_medios=dados['clientes_medios'],
+                receita_bruta=dados['receita_bruta'],
+                ciclo_recebimento=(dados['clientes_medios'] / dados['receita_bruta']) * 360
+            )
+
+        prazo_medio_recebimento.save()
+        response = {
+            'id': prazo_medio_recebimento.id,
+            'clientes_medios': prazo_medio_recebimento.clientes_medios,
+            'receita_bruta': prazo_medio_recebimento.receita_bruta,
+            'ciclo_recebimento': prazo_medio_recebimento.ciclo_recebimento
+        }
+        return response
+
+
+class CalculoCiclos(Resource):
+    def get(self, ciclos):
+        calculo_ciclos = Ciclos.query.filter_by(
+            id=ciclos).first()
+        try:
+            response = {
+                'prazo_medio_estocagem': calculo_ciclos.prazo_medio_estocagem,
+                'prazo_medio_recebimento': calculo_ciclos.prazo_medio_recebimento,
+                'prazo_medio_pagamento': calculo_ciclos.prazo_medio_pagamento,
+                'ciclo_operacional': calculo_ciclos.ciclo_operacional,
+                'ciclo_financeiro': calculo_ciclos.ciclo_financeiro
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Ciclo não encontrado'
+            }
+        return response
+
+    def put(self, ciclo):
+        calculo_ciclo = Ciclos.query.filter_by(
+            ciclo=ciclo).first()
+        dados = request.json
+
+        if 'prazo_medio_estocagem' in dados:
+            calculo_ciclo.prazo_medio_estocagem = dados['prazo_medio_estocagem']
+
+        if 'prazo_medio_recebimento' in dados:
+            calculo_ciclo.prazo_medio_recebimento = dados['prazo_medio_recebimento']
+
+        if 'prazo_medio_pagamento' in dados:
+            calculo_ciclo.prazo_medio_pagamento = dados['prazo_medio_pagamento']
+
+        if 'ciclo_operacional' in dados:
+            calculo_ciclo.ciclo_operacional = dados['ciclo_operacional']
+
+        if 'ciclo_financeiro' in dados:
+            calculo_ciclo.ciclo_financeiro = dados['ciclo_financeiro']
+
+        prazo_medio_recebimento.save()
+        response = {
+            'id': prazo_medio_recebimento.id,
+            'prazo_medio_estocagem': calculo_ciclo.prazo_medio_estocagem,
+            'prazo_medio_recebimento': calculo_ciclo.prazo_medio_recebimento,
+            'prazo_medio_pagamento': calculo_ciclo.prazo_medio_pagamento,
+            'ciclo_operacional': calculo_ciclo.ciclo_operacional,
+            'ciclo_financeiro': calculo_ciclo.ciclo_financeiro
+        }
+
+        return response
+
+    def delete(self, ciclos):
+        calculo_ciclos = Ciclos.query.filter_by(id=ciclos).first()
+        mensagem = 'Ciclo {} excluido com sucesso'.format(calculo_ciclos)
+        calculo_ciclos.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaCiclos(Resource):
+
+    def get(self):
+        calculo_ciclo = Ciclos.query.all()
+        response = [{
+            'id': i.id,
+            'prazo_medio_estocagem': i.prazo_medio_estocagem,
+            'prazo_medio_recebimento': i.prazo_medio_recebimento,
+            'prazo_medio_pagamento': i.prazo_medio_pagamento,
+            'ciclo_operacional': i.ciclo_operacional,
+            'ciclo_financeiro': i.ciclo_financeiro
+
+        } for i in calculo_ciclo]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['prazo_medio_estocagem'] > 0 < dados['prazo_medio_recebimento']:
+            calculo_ciclo = Ciclos(
+                id=dados['id'],
+                prazo_medio_estocagem=dados['prazo_medio_estocagem'],
+                prazo_medio_recebimento=dados['prazo_medio_recebimento'],
+                prazo_medio_pagamento=dados['prazo_medio_pagamento'],
+                ciclo_operacional=dados['prazo_medio_estocagem'] + dados['prazo_medio_recebimento'],
+                ciclo_financeiro=(dados['prazo_medio_estocagem'] + dados['prazo_medio_recebimento']) - dados['prazo_medio_pagamento']
+            )
+
+        calculo_ciclo.save()
+        response = {
+            'id': calculo_ciclo.id,
+            'prazo_medio_estocagem': calculo_ciclo.prazo_medio_estocagem,
+            'prazo_medio_recebimento': calculo_ciclo.prazo_medio_recebimento,
+            'prazo_medio_pagamento': calculo_ciclo.prazo_medio_pagamento,
+            'ciclo_operacional': calculo_ciclo.ciclo_operacional,
+            'ciclo_financeiro': calculo_ciclo.ciclo_financeiro
+        }
+        return response
+
 
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
@@ -2001,6 +2315,15 @@ api.add_resource(CalculoRentabilidadeAtivo, '/rentabilidadeativo/<int:rentabilid
 api.add_resource(ListaRentabilidadeAtivo, '/listarentabilidadeativo/')
 api.add_resource(CalculoRentabilidadePl, '/rentabilidadepl/<int:rentabilidadepl>/')
 api.add_resource(ListaRentabilidadePl, '/listarentabilidadepl/')
+api.add_resource(CalculoPrazoMedioEstocagem, '/prazomedioestocagem/<int:prazomedioestocagem>/')
+api.add_resource(ListaPrazoMedioEstocagem, '/listaprazomedioestocagem/')
+api.add_resource(CalculoPrazoMedioPagamento, '/prazomediopagamento/<int:prazomediopagamento>/')
+api.add_resource(ListaPrazoMedioPagamento, '/listaprazomediopagamento/')
+api.add_resource(CalculoPrazoMedioRecebimento, '/prazomediorecebimento/<int:prazomediorecebimento>/')
+api.add_resource(ListaPrazoMedioRecebimento, '/listaprazomediorecebimento/')
+api.add_resource(CalculoCiclos, '/ciclos/<int:ciclos>/')
+api.add_resource(ListaCiclos, '/listaciclos/')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

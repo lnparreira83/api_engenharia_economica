@@ -21,3 +21,7 @@
  * Giro do Ativo
  * Rentabilidade do Ativo
  * Rentabilidade do Patrimonio Liquido
+ * Prazo medio de estocagem
+ * Prazo medio de pagamento
+ * Prazo medio de recebimento
+ * Ciclos (operacional e financeiro)

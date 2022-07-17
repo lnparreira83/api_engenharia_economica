@@ -420,6 +420,83 @@ class RentabilidadePl(Base):
         db_session.commit()
 
 
+class PrazoMedioEstocagem(Base):
+    __tablename__ = 'prazomedioestocagem'
+    id = Column(Integer, primary_key=True)
+    ciclo_estocagem = Column(Float())
+    estoque_medio = Column(Float())
+    custo_mercadorias_vendidas = Column(Float())
+
+    def __repr__(self):
+        return '<Prazo medio de estocagem {}>'.format(self.ciclo_estocagem)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+class PrazoMedioPagamento(Base):
+    __tablename__ = 'prazomediopagamento'
+    id = Column(Integer, primary_key=True)
+    ciclo_pagamento = Column(Float())
+    fornecedores_medios = Column(Float())
+    custo_mercadorias_vendidas = Column(Float())
+
+    def __repr__(self):
+        return '<Prazo medio de pagamento {}>'.format(self.ciclo_pagamento)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+class PrazoMedioRecebimento(Base):
+    __tablename__ = 'prazomediorecebimento_'
+    id = Column(Integer, primary_key=True)
+    ciclo_recebimento = Column(Float())
+    clientes_medios = Column(Float())
+    receita_bruta = Column(Float())
+
+    def __repr__(self):
+        return '<Prazo medio de recebimento {}>'.format(self.ciclo_recebimento)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+class Ciclos(Base):
+    __tablename__ = 'ciclos'
+    id = Column(Integer, primary_key=True)
+    prazo_medio_estocagem = Column(Float())
+    prazo_medio_recebimento = Column(Float())
+    prazo_medio_pagamento = Column(Float())
+    ciclo_operacional = Column(Float())
+    ciclo_financeiro = Column(Float())
+
+    def __repr__(self):
+        return '<Ciclo {}>'.format(self.ciclo_financeiro)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
+
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
