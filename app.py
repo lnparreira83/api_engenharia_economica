@@ -1721,6 +1721,245 @@ class ListaMargemLiquida(Resource):
         }
         return response
 
+class CalculoGiroAtivo(Resource):
+    def get(self, giroativo):
+        giro_ativo = GiroAtivo.query.filter_by(
+            id=giroativo).first()
+        try:
+            response = {
+                'giro_ativo': giro_ativo.giro_ativo,
+                'receita_liquida': giro_ativo.receita_liquida,
+                'ativo': giro_ativo.ativo,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Giro ativo não encontrada'
+            }
+        return response
+
+    def put(self, giroativo):
+        giro_ativo = GiroAtivo.query.filter_by(
+            giroativo=giroativo).first()
+        dados = request.json
+
+        if 'giro_ativo' in dados:
+            giro_ativo.giro_ativo = dados['giro_ativo']
+
+        if 'receita_liquida' in dados:
+            giro_ativo.receita_liquida = dados['receita_liquida']
+
+        if 'ativo' in dados:
+            giro_ativo.ativo = dados['ativo']
+
+        giro_ativo.save()
+        response = {
+            'id': giro_ativo.id,
+            'giro_ativo': giro_ativo.giro_ativo,
+            'receita_liquida': giro_ativo.receita_liquida,
+            'ativo': giro_ativo.ativo
+        }
+
+        return response
+
+    def delete(self, giroativo):
+        giro_ativo = GiroAtivo.query.filter_by(id=giroativo).first()
+        mensagem = 'Giro do ativo {} excluido com sucesso'.format(giro_ativo)
+        giro_ativo.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaGiroAtivo(Resource):
+
+    def get(self):
+        giro_ativo = GiroAtivo.query.all()
+        response = [{
+            'id': i.id,
+            'giro_ativo': i.giro_ativo,
+            'receita_liquida': i.receita_liquida,
+            'ativo': i.ativo
+
+        } for i in giro_ativo]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['ativo'] > 0 < dados['receita_liquida']:
+            giro_ativo = GiroAtivo(
+                id=dados['id'],
+                ativo=dados['ativo'],
+                receita_liquida=dados['receita_liquida'],
+                giro_ativo=(dados['receita_liquida'] / dados['ativo']) * 100
+            )
+
+        giro_ativo.save()
+        response = {
+            'id': giro_ativo.id,
+            'ativo': giro_ativo.ativo,
+            'receita_liquida': giro_ativo.receita_liquida,
+            'giro_ativo': giro_ativo.giro_ativo
+        }
+        return response
+
+class CalculoRentabilidadeAtivo(Resource):
+    def get(self, rentabilidadeativo):
+        rentabilidade_ativo = RentabilidadeAtivo.query.filter_by(
+            id=giroativo).first()
+        try:
+            response = {
+                'lucro_liquido': rentabilidade_ativo.lucro_liquido,
+                'rentabilidade_ativo': rentabilidade_ativo.rentabilidade_ativo,
+                'ativo': rentabilidade_ativo.ativo,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Rentabilidade do ativo não encontrada'
+            }
+        return response
+
+    def put(self, rentabilidadeativo):
+        rentabilidade_ativo = RentabilidadeAtivo.query.filter_by(
+            rentabilidadeativo=rentabilidadeativo).first()
+        dados = request.json
+
+        if 'lucro_liquido' in dados:
+            rentabilidade_ativo.lucro_liquido = dados['lucro_liquido']
+
+        if 'rentabilidade_ativo' in dados:
+            rentabilidade_ativo.rentabilidade_ativo = dados['rentabilidade_ativo']
+
+        if 'ativo' in dados:
+            rentabilidade_ativo.ativo = dados['ativo']
+
+        rentabilidade_ativo.save()
+        response = {
+            'id': rentabilidade_ativo.id,
+            'lucro_liquido': rentabilidade_ativo.lucro_liquido,
+            'rentabilidade_ativo': rentabilidade_ativo.rentabilidade_ativo,
+            'ativo': rentabilidade_ativo.ativo
+        }
+
+        return response
+
+    def delete(self, rentabilidadeativo):
+        rentabilidade_ativo = RentabilidadeAtivo.query.filter_by(id=rentabilidadeativo).first()
+        mensagem = 'Rentabilidade do ativo {} excluido com sucesso'.format(rentabilidade_ativo)
+        rentabilidade_ativo.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaRentabilidadeAtivo(Resource):
+
+    def get(self):
+        rentabilidade_ativo = RentabilidadeAtivo.query.all()
+        response = [{
+            'id': i.id,
+            'lucro_liquido': i.lucro_liquido,
+            'rentabilidade_ativo': i.rentabilidade_ativo,
+            'ativo': i.ativo
+
+        } for i in rentabilidade_ativo]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['ativo'] > 0 < dados['lucro_liquido']:
+            rentabilidade_ativo = RentabilidadeAtivo(
+                id=dados['id'],
+                ativo=dados['ativo'],
+                lucro_liquido=dados['lucro_liquido'],
+                rentabilidade_ativo=(dados['lucro_liquido'] / dados['ativo']) * 100
+            )
+
+        rentabilidade_ativo.save()
+        response = {
+            'id': rentabilidade_ativo.id,
+            'ativo': rentabilidade_ativo.ativo,
+            'lucro_liquido': rentabilidade_ativo.lucro_liquido,
+            'rentabilidade_ativo': rentabilidade_ativo.rentabilidade_ativo
+        }
+        return response
+
+
+class CalculoRentabilidadePl(Resource):
+    def get(self, rentabilidadepl):
+        rentabilidade_pl = RentabilidadePl.query.filter_by(
+            id=giroativo).first()
+        try:
+            response = {
+                'lucro_liquido': rentabilidade_pl.lucro_liquido,
+                'patrimonio_liquido': rentabilidade_pl.patrimonio_liquido,
+                'rentabilidade_pl': rentabilidade_pl.rentabilidade_pl,
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Rentabilidade do patrimonio liquido não encontrada'
+            }
+        return response
+
+    def put(self, rentabilidadepl):
+        rentabilidade_pl = RentabilidadePl.query.filter_by(
+            rentabilidadepl=rentabilidadepl).first()
+        dados = request.json
+
+        if 'lucro_liquido' in dados:
+            rentabilidade_pl.lucro_liquido = dados['lucro_liquido']
+
+        if 'patrimonio_liquido' in dados:
+            rentabilidade_pl.patrimonio_liquido = dados['patrimonio_liquido']
+
+        if 'rentabilidade_pl' in dados:
+            rentabilidade_pl.rentabilidade_pl = dados['rentabilidade_pl']
+
+        rentabilidade_pl.save()
+        response = {
+            'id': rentabilidade_pl.id,
+            'lucro_liquido': rentabilidade_pl.lucro_liquido,
+            'patrimonio_liquido': rentabilidade_pl.patrimonio_liquido,
+            'rentabilidade_pl': rentabilidade_pl.rentabilidade_pl
+        }
+
+        return response
+
+    def delete(self, rentabilidadepl):
+        rentabilidade_pl = RentabilidadePl.query.filter_by(id=rentabilidadepl).first()
+        mensagem = 'Rentabilidade do patrimonio liquido {} excluida com sucesso'.format(rentabilidade_pl)
+        rentabilidade_pl.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+class ListaRentabilidadePl(Resource):
+
+    def get(self):
+        rentabilidade_pl = RentabilidadePl.query.all()
+        response = [{
+            'id': i.id,
+            'lucro_liquido': i.lucro_liquido,
+            'patrimonio_liquido': i.patrimonio_liquido,
+            'rentabilidade_pl': i.rentabilidade_pl
+
+        } for i in rentabilidade_pl]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['lucro_liquido'] > 0 < dados['patrimonio_liquido']:
+            rentabilidade_pl = RentabilidadePl(
+                id=dados['id'],
+                lucro_liquido=dados['lucro_liquido'],
+                patrimonio_liquido=dados['patrimonio_liquido'],
+                rentabilidade_pl=(dados['lucro_liquido'] / dados['patrimonio_liquido']) * 100
+            )
+
+        rentabilidade_pl.save()
+        response = {
+            'id': rentabilidade_pl.id,
+            'lucro_liquido': rentabilidade_pl.lucro_liquido,
+            'patrimonio_liquido': rentabilidade_pl.patrimonio_liquido,
+            'rentabilidade_pl': rentabilidade_pl.rentabilidade_pl
+        }
+        return response
+
+
 
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
@@ -1756,6 +1995,12 @@ api.add_resource(CalculoLiquidezGeral, '/liquidezgeral/<int:liquidezgeral>/')
 api.add_resource(ListaLiquidezGeral, '/listaliquidezgeral/')
 api.add_resource(CalculoMargemLiquida, '/margemliquida/<int:margemliquida>/')
 api.add_resource(ListaMargemLiquida, '/listamargemliquida/')
+api.add_resource(CalculoGiroAtivo, '/giroativo/<int:giroativo>/')
+api.add_resource(ListaGiroAtivo, '/listagiroativo/')
+api.add_resource(CalculoRentabilidadeAtivo, '/rentabilidadeativo/<int:rentabilidadeativo>/')
+api.add_resource(ListaRentabilidadeAtivo, '/listarentabilidadeativo/')
+api.add_resource(CalculoRentabilidadePl, '/rentabilidadepl/<int:rentabilidadepl>/')
+api.add_resource(ListaRentabilidadePl, '/listarentabilidadepl/')
 
 if __name__ == '__main__':
     app.run(debug=True)

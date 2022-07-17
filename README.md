@@ -18,3 +18,6 @@
  * Liquidez Seca
  * Liquidez Geral
  * Margem Liquida
+ * Giro do Ativo
+ * Rentabilidade do Ativo
+ * Rentabilidade do Patrimonio Liquido

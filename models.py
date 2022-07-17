@@ -383,9 +383,9 @@ class GiroAtivo(Base):
 
 
 class RentabilidadeAtivo(Base):
-    __tablename__ = 'rentabilidadeativo'
+    __tablename__ = 'rentabilidadeativo_'
     id = Column(Integer, primary_key=True)
-    luco_liquido = Column(Float())
+    lucro_liquido = Column(Float())
     ativo = Column(Float())
     rentabilidade_ativo = Column(Float())
 
@@ -402,9 +402,9 @@ class RentabilidadeAtivo(Base):
 
 
 class RentabilidadePl(Base):
-    __tablename__ = 'rentabilidadepl'
+    __tablename__ = 'rentabilidadepl_'
     id = Column(Integer, primary_key=True)
-    luco_liquido = Column(Float())
+    lucro_liquido = Column(Float())
     patrimonio_liquido = Column(Float())
     rentabilidade_pl = Column(Float())
 
