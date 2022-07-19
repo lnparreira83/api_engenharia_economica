@@ -3,7 +3,8 @@ import math
 from flask import Flask, request
 from flask_restful import Resource, Api
 from models import *
-import numpy
+import numpy as np
+import numpy_financial as npf
 
 app = Flask(__name__)
 api = Api(app)
@@ -89,7 +90,7 @@ class ListaJurosCompostos(Resource):
                 id=dados['id'],
                 juroscompostos=dados['juroscompostos'],
                 capital=dados['capital'],
-                taxa=numpy.sqrt(dados['juroscompostos'] / dados['capital']) - 1,
+                taxa=np.sqrt(dados['juroscompostos'] / dados['capital']) - 1,
                 tempo=dados['tempo']
             )
         # calcular o capital
@@ -108,7 +109,7 @@ class ListaJurosCompostos(Resource):
                 juroscompostos=dados['juroscompostos'],
                 capital=dados['capital'],
                 taxa=dados['taxa'],
-                tempo=numpy.log(dados['juroscompostos'] / dados['capital']) / numpy.log(1 + dados['taxa'] / 100)
+                tempo=np.log(dados['juroscompostos'] / dados['capital']) / np.log(1 + dados['taxa'] / 100)
             )
         juros_compostos.save()
         response = {
@@ -2034,8 +2035,8 @@ class CalculoPrazoMedioPagamento(Resource):
         try:
             response = {
                 'ciclo_pagamento': prazo_medio_pagamento.ciclo_pagamento,
-                'fornecedores_medios': prazo_medio_estocagem.fornecedores_medios,
-                'custo_mercadorias_vendidas': prazo_medio_estocagem.custo_mercadorias_vendidas,
+                'fornecedores_medios': prazo_medio_pagamento.fornecedores_medios,
+                'custo_mercadorias_vendidas': prazo_medio_pagamento.custo_mercadorias_vendidas,
             }
         except AttributeError:
             response = {
@@ -2287,6 +2288,103 @@ class ListaCiclos(Resource):
         return response
 
 
+class CalculoVPL(Resource):
+    def get(self, valorpresenteliquido):
+        valor_presente_liquido = VPL.query.filter_by(
+            id=valorpresenteliquido).first()
+        try:
+            response = {
+                'investimento': valor_presente_liquido.investimento,
+                'retornos': valor_presente_liquido.retorno,
+                'periodo': valor_presente_liquido.periodo,
+                'taxa_media_anual': valor_presente_liquido.taxa_media_anual,
+                'valor_presente_liquido': valor_presente_liquido.valor_presente_liquido
+            }
+        except AttributeError:
+            response = {
+                'status': 'error',
+                'message': 'Valor presente liquido não encontrado'
+            }
+        return response
+
+    def put(self, valorpresenteliquido):
+        valor_presente_liquido = VPL.query.filter_by(
+            ciclo=valorpresenteliquido).first()
+        dados = request.json
+
+        if 'investimento' in dados:
+            valor_presente_liquido.investimento = dados['investimento']
+
+        if 'retornos' in dados:
+            valor_presente_liquido.retornos = dados['retornos']
+
+        if 'periodo' in dados:
+            valor_presente_liquido.periodo = dados['periodo']
+
+        if 'taxa_media_anual' in dados:
+            valor_presente_liquido.taxa_media_anual = dados['taxa_media_anual']
+
+        if 'valor_presente_liquido' in dados:
+            valor_presente_liquido.valor_presente_liquido = dados['valor_presente_liquido']
+
+        valor_presente_liquido.save()
+        response = {
+            'id': valor_presente_liquido.id,
+            'investimento': valor_presente_liquido.investimento,
+            'retornos': valor_presente_liquido.retornos,
+            'periodo': valor_presente_liquido.periodo,
+            'taxa_media_anual': valor_presente_liquido.taxa_media_anual,
+            'valor_presente_liquido': valor_presente_liquido.valor_presente_liquido
+        }
+
+        return response
+
+    def delete(self, valorpresenteliquido):
+        valor_presente_liquido = VPL.query.filter_by(id=valorpresenteliquido).first()
+        mensagem = 'VPL {} excluido com sucesso'.format(valor_presente_liquido)
+        valor_presente_liquido.delete()
+        return {'status': 'sucesso', 'mensagem': mensagem}
+
+
+class ListaVPL(Resource):
+
+    def get(self):
+        valor_presente_liquido = VPL.query.all()
+        response = [{
+            'id': i.id,
+            'investimento': i.investimento,
+            'retornos': i.retornos,
+            'periodo': i.periodo,
+            'taxa_media_anual': i.taxa_media_anual,
+            'valor_presente_liquido': i.valor_presente_liquido
+
+        } for i in valor_presente_liquido]
+        return response
+
+    def post(self):
+        dados = request.json
+        if dados['retornos'] > 0 < dados['taxa_media_anual']:
+            valor_presente_liquido = VPL(
+                id=dados['id'],
+                investimento=dados['investimento'],
+                retornos=dados['retornos'],
+                periodo=dados['periodo'],
+                taxa_media_anual=dados['taxa_media_anual'] / 100,
+                valor_presente_liquido=npf.npv(dados['taxa_media_anual'], [- dados['investimento'], dados['retornos']]).round(5)
+            )
+
+        valor_presente_liquido.save()
+        response = {
+            'id': valor_presente_liquido.id,
+            'investimento': valor_presente_liquido.investimento,
+            'retornos': valor_presente_liquido.retornos,
+            'periodo': valor_presente_liquido.periodo,
+            'taxa_media_anual': valor_presente_liquido.taxa_media_anual,
+            'valor_presente_liquido': valor_presente_liquido.valor_presente_liquido
+        }
+        return response
+
+
 api.add_resource(JuroComposto, '/jurocomposto/<int:juroscompostos>/')
 api.add_resource(ListaJurosCompostos, '/listajuroscompostos/')
 api.add_resource(Operacao, '/jurosimples/<int:id>/')
@@ -2335,6 +2433,8 @@ api.add_resource(CalculoPrazoMedioRecebimento, '/prazomediorecebimento/<int:praz
 api.add_resource(ListaPrazoMedioRecebimento, '/listaprazomediorecebimento/')
 api.add_resource(CalculoCiclos, '/ciclos/<int:ciclos>/')
 api.add_resource(ListaCiclos, '/listaciclos/')
+api.add_resource(CalculoVPL, '/valorpresenteliquido/<int:valorpresenteliquido>/')
+api.add_resource(ListaVPL, '/listavalorpresenteliquido/')
 
 if __name__ == '__main__':
     app.run(debug=True)

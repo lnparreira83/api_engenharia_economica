@@ -457,6 +457,7 @@ class PrazoMedioPagamento(Base):
         db_session.delete(self)
         db_session.commit()
 
+
 class PrazoMedioRecebimento(Base):
     __tablename__ = 'prazomediorecebimento_'
     id = Column(Integer, primary_key=True)
@@ -474,6 +475,7 @@ class PrazoMedioRecebimento(Base):
     def delete(self):
         db_session.delete(self)
         db_session.commit()
+
 
 class Ciclos(Base):
     __tablename__ = 'ciclos'
@@ -495,6 +497,25 @@ class Ciclos(Base):
         db_session.delete(self)
         db_session.commit()
 
+class VPL(Base):
+    __tablename__ = 'valorpresenteliquido'
+    id = Column(Integer, primary_key=True)
+    investimento = Column(Float())
+    retornos = Column(Float())
+    periodo = Column(Float())
+    taxa_media_anual = Column(Float())
+    valor_presente_liquido = Column(Float())
+
+    def __repr__(self):
+        return '<Valor presente liquido {}>'.format(self.valor_presente_liquido)
+
+    def save(self):
+        db_session.add(self)
+        db_session.commit()
+
+    def delete(self):
+        db_session.delete(self)
+        db_session.commit()
 
 
 def init_db():
