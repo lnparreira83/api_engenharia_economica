@@ -2363,15 +2363,18 @@ class ListaVPL(Resource):
 
     def post(self):
         dados = request.json
-        if dados['retornos'] > 0 < dados['taxa_media_anual']:
-            valor_presente_liquido = VPL(
-                id=dados['id'],
-                investimento=dados['investimento'],
-                retornos=dados['retornos'],
-                periodo=dados['periodo'],
-                taxa_media_anual=dados['taxa_media_anual'] / 100,
-                valor_presente_liquido=npf.npv(dados['taxa_media_anual'], [- dados['investimento'], dados['retornos']]).round(5)
-            )
+        retorno = []
+        retorno.append(- dados['investimento'])
+        for i in range (0,int(dados['periodo'])):
+            retorno.append(dados['retornos'])
+        valor_presente_liquido = VPL(
+            id=dados['id'],
+            investimento=dados['investimento'],
+            retornos=dados['retornos'],
+            periodo=dados['periodo'],
+            taxa_media_anual=dados['taxa_media_anual'] / 100,
+            valor_presente_liquido= npf.npv(dados['taxa_media_anual'] / 100, retorno)
+        )
 
         valor_presente_liquido.save()
         response = {
