@@ -25,6 +25,7 @@
  * Prazo medio de pagamento
  * Prazo medio de recebimento
  * Ciclos (operacional e financeiro)
+ * Valor presente liquido
 
 
 Lista de endpoints:
@@ -77,9 +78,11 @@ Lista de endpoints:
 * ListaPrazoMedioRecebimento : ip_server + /listaprazomediorecebimento/
 * CalculoCiclos : ip_server + /ciclos/<int:ciclos>/
 * ListaCiclos : ip_server + /listaciclos/
-
+* ValorPresenteLiquido : ip_server + /valorpresenteliquido/<int:valorpresenteliquido>/
+* ListaValorPresenteliquido : ip_server + /listavalorpresenteliquido/
 
 Observações:
-* Para utilizar a api, basta executar o arquivo app.py
+* Para utilizar a api, basta executar o arquivo app.py (no prompt de comando, digite python3 app.py)
+* Outra opção é mandar rodar o arquivo app.py diretamente atraves de alguma IDE que suporte a linguagem Python (por exemplo: PyCharm)
 * Com o ip gerado pelo server, basta utilizar algum software que permita a manipulação dos endpoints atraves de json (ex: Insomnia)
 * ip_server = numero de ip gerado pelo server após rodar o arquivo app.py
